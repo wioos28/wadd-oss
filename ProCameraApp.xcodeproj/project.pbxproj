@@ -17,6 +17,7 @@
 		A100000F /* HistogramManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010 /* HistogramManager.swift */; };
 		A1000011 /* FocusPeakingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012 /* FocusPeakingManager.swift */; };
 		A1000013 /* FilmPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000015 /* FilmPreset.swift */; };
+		A1000017 /* WatermarkEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000018 /* WatermarkEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		A1000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000015 /* FilmPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FilmPreset.swift; path = Models/FilmPreset.swift; sourceTree = "<group>"; };
 		A1000016 /* ProCameraApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProCameraApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000018 /* WatermarkEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatermarkEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +60,7 @@
 				A100000A /* CameraSettings.swift */,
 				A100000C /* CameraPreviewView.swift */,
 				A1000015 /* FilmPreset.swift */,
+				A1000018 /* WatermarkEngine.swift */,
 				A1000014 /* Info.plist */,
 				A100001C /* Products */,
 			);
@@ -149,6 +152,7 @@
 				A100000F /* HistogramManager.swift in Sources */,
 				A1000011 /* FocusPeakingManager.swift in Sources */,
 				A1000013 /* FilmPreset.swift in Sources */,
+				A1000017 /* WatermarkEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

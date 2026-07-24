@@ -18,6 +18,7 @@ struct ContentView: View {
     @StateObject private var histogramManager = HistogramManager()
     @StateObject private var focusPeakingManager = FocusPeakingManager()
     @StateObject private var filmSimulationManager = FilmSimulationManager()
+    @StateObject private var watermarkEngine = WatermarkEngine()
 
     @State private var showingControls = true
     @State private var showingFilterPanel = false
@@ -76,6 +77,7 @@ struct ContentView: View {
             VStack {
                 TopBarView(
                     cameraManager: cameraManager,
+                    watermarkEngine: watermarkEngine,
                     showingSettings: $showingSettings,
                     showingFilterPanel: $showingFilterPanel,
                     showingProTools: $showingProTools
@@ -164,6 +166,7 @@ struct ContentView: View {
                 SettingsPanelView(
                     cameraManager: cameraManager,
                     colorFilterManager: colorFilterManager,
+                    watermarkEngine: watermarkEngine,
                     showingSettings: $showingSettings
                 )
                 .transition(.move(edge: .trailing))
@@ -204,6 +207,7 @@ struct ContentView: View {
             cameraManager.histogramManager = histogramManager
             cameraManager.focusPeakingManager = focusPeakingManager
             cameraManager.filmSimulationManager = filmSimulationManager
+            cameraManager.watermarkEngine = watermarkEngine
             cameraManager.startSession()
         }
     }
@@ -231,6 +235,7 @@ struct ContentView: View {
 /// Top navigation bar
 struct TopBarView: View {
     @ObservedObject var cameraManager: CameraManager
+    @ObservedObject var watermarkEngine: WatermarkEngine
     @Binding var showingSettings: Bool
     @Binding var showingFilterPanel: Bool
     @Binding var showingProTools: Bool
@@ -248,6 +253,24 @@ struct TopBarView: View {
             }
 
             Spacer()
+
+            // Privacy Mode toggle
+            Button(action: {
+                withAnimation(.spring(response: 0.3)) {
+                    watermarkEngine.isPrivacyModeEnabled.toggle()
+                }
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(watermarkEngine.isPrivacyModeEnabled ? Color.blue.opacity(0.8) : Color.gray.opacity(0.5))
+                        .frame(width: 36, height: 36)
+
+                    Image(systemName: watermarkEngine.isPrivacyModeEnabled ? "lock.shield.fill" : "eye.slash")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                }
+            }
+            .shadow(color: watermarkEngine.isPrivacyModeEnabled ? .blue.opacity(0.5) : .clear, radius: 4)
 
             // Format selector
             FormatSelectorView(cameraManager: cameraManager)
@@ -270,7 +293,7 @@ struct TopBarView: View {
             }) {
                 Image(systemName: "film")
                     .font(.title2)
-                    .foregroundColor(filmSimulationManager.currentFilm == .original ? .white : filmSimulationManager.currentFilm.accentColor)
+                    .foregroundColor(.white)
                     .shadow(color: .black.opacity(0.5), radius: 2)
             }
 
@@ -871,6 +894,7 @@ struct FilterPreviewButton: View {
 struct SettingsPanelView: View {
     @ObservedObject var cameraManager: CameraManager
     @ObservedObject var colorFilterManager: ColorFilterManager
+    @ObservedObject var watermarkEngine: WatermarkEngine
     @Binding var showingSettings: Bool
 
     var body: some View {
@@ -951,10 +975,62 @@ struct SettingsPanelView: View {
 
             Divider().background(Color.gray)
 
+            // MARK: - Privacy Mode Settings
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "lock.shield.fill")
+                        .foregroundColor(.blue)
+                    Text("Privacy Mode")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                }
+
+                Toggle(isOn: $watermarkEngine.isPrivacyModeEnabled) {
+                    HStack {
+                        Image(systemName: watermarkEngine.isPrivacyModeEnabled ? "eye.slash.fill" : "eye.fill")
+                            .foregroundColor(watermarkEngine.isPrivacyModeEnabled ? .blue : .gray)
+                        VStack(alignment: .leading) {
+                            Text("GPS Protection")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            Text("Strip GPS & Add Watermark")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .tint(.blue)
+
+                if watermarkEngine.isPrivacyModeEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Fake Location")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+
+                        TextField("Enter fake location...", text: $watermarkEngine.fakeLocation)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .font(.caption)
+
+                        Text("Watermark will show this location instead of real GPS")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                            .italic()
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .padding(12)
+            .background(Color.blue.opacity(0.1))
+            .cornerRadius(8)
+
+            Divider().background(Color.gray)
+
             // Reset
             Button(action: {
                 cameraManager.settings = CameraSettings()
                 colorFilterManager.resetAll()
+                watermarkEngine.isPrivacyModeEnabled = false
+                watermarkEngine.fakeLocation = "Somewhere on Earth"
             }) {
                 HStack {
                     Image(systemName: "arrow.counterclockwise")

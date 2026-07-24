@@ -96,6 +96,9 @@ class CameraManager: NSObject, ObservableObject {
     /// Reference to film simulation manager
     var filmSimulationManager: FilmSimulationManager?
 
+    /// Reference to watermark engine
+    var watermarkEngine: WatermarkEngine?
+
     // MARK: - Initialization
 
     override init() {
@@ -699,7 +702,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
             }
 
             // Lấy photo data
-            guard let photoData = photo.fileDataRepresentation() else {
+            guard var photoData = photo.fileDataRepresentation() else {
                 state = .error("Không thể lấy photo data")
                 canCapture = true
                 return
@@ -708,8 +711,41 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
             // Lấy metadata
             let metadata = photo.metadata
 
+            // Xử lý Privacy Mode: xóa GPS và thêm watermark
+            if let watermarkEngine = self.watermarkEngine, watermarkEngine.isPrivacyModeEnabled {
+                photoData = await processPrivacyData(photoData, watermarkEngine: watermarkEngine)
+            }
+
             // Lưu ảnh
             savePhoto(photoData: photoData, metadata: metadata)
+        }
+    }
+
+    /// Xử lý privacy: xóa GPS và thêm watermark
+    private func processPrivacyData(_ photoData: Data, watermarkEngine: WatermarkEngine) async -> Data {
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                // Xóa GPS metadata
+                var processedData = watermarkEngine.stripGPSMetadata(from: photoData)
+
+                // Áp dụng watermark nếu được bật
+                if watermarkEngine.isPrivacyModeEnabled {
+                    if let uiImage = UIImage(data: processedData) {
+                        let watermarkedImage = watermarkEngine.applyWatermark(
+                            to: uiImage,
+                            date: Date(),
+                            location: watermarkEngine.fakeLocation
+                        )
+                        if let watermarkedData = watermarkedImage.jpegData(compressionQuality: 0.95) {
+                            processedData = watermarkedData
+                        }
+                    }
+                }
+
+                DispatchQueue.main.async {
+                    continuation.resume(returning: processedData)
+                }
+            }
         }
     }
 
