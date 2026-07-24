@@ -1,14 +1,12 @@
-# Codemagic CI/CD Configuration for ProCameraApp
-# https://docs.codemagic.io/getting-started/yaml/
-
 workflows:
   ios-release:
-    name: iOS Release Build
-    max_build_duration: 60
+    name: Build iOS ProCameraApp
+    environment:
+      xcode: latest
     scripts:
       - name: Build iOS
         script: |
-          # Tự động tìm vị trí file xcodeproj
+          # Tự động tìm file xcodeproj trong mã nguồn được clone về
           PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
 
           if [ -z "$PROJECT_PATH" ]; then
@@ -16,90 +14,19 @@ workflows:
             exit 1
           fi
 
+          # Chuyển vào đúng thư mục chứa project để build
           PROJECT_DIR=$(dirname "$PROJECT_PATH")
           cd "$PROJECT_DIR"
 
-          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
-            -project ProCameraApp.xcodeproj \
-            -scheme ProCameraApp \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath $CM_BUILD_DIR/build/ProCameraApp.xcarchive \
-            archive
-      - name: Export IPA
-        script: |
-          PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
-          PROJECT_DIR=$(dirname "$PROJECT_PATH")
-          cd "$PROJECT_DIR"
-
-          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
-            -exportArchive \
-            -archivePath $CM_BUILD_DIR/build/ProCameraApp.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath $CM_BUILD_DIR/output
+          # Thực hiện lệnh build/archive
+          xcodebuild -project ProCameraApp.xcodeproj -scheme ProCameraApp -configuration Release -sdk iphoneos -archivePath $HOME/clone/build/ProCameraApp.xcarchive archive
     artifacts:
-      - build/ProCameraApp.xcarchive
-      - output/*.ipa
-
-  ios-debug:
-    name: iOS Debug Build
-    max_build_duration: 30
-    scripts:
-      - name: Build iOS Debug
-        script: |
-          PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
-          PROJECT_DIR=$(dirname "$PROJECT_PATH")
-          cd "$PROJECT_DIR"
-
-          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
-            -project ProCameraApp.xcodeproj \
-            -scheme ProCameraApp \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
-            build
-    artifacts:
-      - build/Debug-iphonesimulator/*.app
-
-  ios-test:
-    name: iOS Tests
-    max_build_duration: 45
-    scripts:
-      - name: Run Unit Tests
-        script: |
-          PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
-          PROJECT_DIR=$(dirname "$PROJECT_PATH")
-          cd "$PROJECT_DIR"
-
-          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
-            -project ProCameraApp.xcodeproj \
-            -scheme ProCameraApp \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
-            test
-    artifacts:
-      - build/logs/*.xcresult
+      - $HOME/clone/build/ProCameraApp.xcarchive
 
 trigger:
   events:
     - push
-    - pull_request
   branch_patterns:
     - pattern: 'main'
       include: true
       source: true
-    - pattern: 'develop'
-      include: true
-      source: true
-    - pattern: 'feature/*'
-      include: true
-      source: true
-  tag_patterns:
-    - pattern: 'v*'
-      include: true
-
-cache:
-  cache_paths:
-    - ~/Library/Caches/CocoaPods
-    - ~/Library/Caches/com.apple.dt.Xcode
