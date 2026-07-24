@@ -715,34 +715,40 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
             // Lấy metadata
             let metadata = photo.metadata
 
+            // Capture values for background processing
+            let isPrivacyEnabled = watermarkEngine?.isPrivacyModeEnabled ?? false
+            let fakeLocation = watermarkEngine?.fakeLocation ?? "Somewhere on Earth"
+            let currentFormat = settings.captureFormat
+
             // Xử lý Privacy Mode: xóa GPS và thêm watermark
-            if let watermarkEngine = self.watermarkEngine, watermarkEngine.isPrivacyModeEnabled {
-                photoData = await processPrivacyData(photoData, watermarkEngine: watermarkEngine)
+            if isPrivacyEnabled {
+                photoData = await processPrivacyData(
+                    photoData,
+                    fakeLocation: fakeLocation
+                )
             }
 
             // Lưu ảnh
-            savePhoto(photoData: photoData, metadata: metadata)
+            savePhoto(photoData: photoData, metadata: metadata, format: currentFormat)
         }
     }
 
     /// Xử lý privacy: xóa GPS và thêm watermark
-    private func processPrivacyData(_ photoData: Data, watermarkEngine: WatermarkEngine) async -> Data {
+    private func processPrivacyData(_ photoData: Data, fakeLocation: String) async -> Data {
         return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            DispatchQueue.global(qos: .userInitiated).async {
                 // Xóa GPS metadata
-                var processedData = watermarkEngine.stripGPSMetadata(from: photoData)
+                var processedData = stripGPSMetadataSync(from: photoData)
 
                 // Áp dụng watermark nếu được bật
-                if watermarkEngine.isPrivacyModeEnabled {
-                    if let uiImage = UIImage(data: processedData) {
-                        let watermarkedImage = watermarkEngine.applyWatermark(
-                            to: uiImage,
-                            date: Date(),
-                            location: watermarkEngine.fakeLocation
-                        )
-                        if let watermarkedData = watermarkedImage.jpegData(compressionQuality: 0.95) {
-                            processedData = watermarkedData
-                        }
+                if let uiImage = UIImage(data: processedData) {
+                    let watermarkedImage = self.applyWatermarkSync(
+                        to: uiImage,
+                        date: Date(),
+                        location: fakeLocation
+                    )
+                    if let watermarkedData = watermarkedImage.jpegData(compressionQuality: 0.95) {
+                        processedData = watermarkedData
                     }
                 }
 
@@ -753,11 +759,107 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
         }
     }
 
-    /// Lưu ảnh vào Photo Library
-    private func savePhoto(photoData: Data, metadata: [String: Any]) {
-        // Capture format before going to background thread
-        let currentFormat = settings.captureFormat
+    /// Sync wrapper for stripping GPS metadata
+    private func stripGPSMetadataSync(from data: Data) -> Data {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return data
+        }
 
+        guard let metadata = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any] else {
+            return data
+        }
+
+        var mutableMetadata = metadata
+        mutableMetadata.removeValue(forKey: kCGImagePropertyGPSDictionary as String)
+
+        let destinationData = NSMutableData()
+        let typeIdentifier = CGImageSourceGetType(source) ?? (UTType.jpeg.identifier as CFString)
+
+        guard let destination = CGImageDestinationCreateWithData(
+            destinationData,
+            typeIdentifier,
+            1,
+            nil
+        ) else {
+            return data
+        }
+
+        if let image = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+            CGImageDestinationAddImage(destination, image, mutableMetadata as CFDictionary)
+        }
+
+        return destinationData as Data
+    }
+
+    /// Sync wrapper for applying watermark
+    private func applyWatermarkSync(to image: UIImage, date: Date, location: String) -> UIImage {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+
+        let displayDate = dateFormatter.string(from: date)
+
+        let renderer = UIGraphicsImageRenderer(size: image.size)
+        return renderer.image { context in
+            image.draw(at: .zero)
+
+            let ctx = context.cgContext
+            ctx.saveGState()
+
+            let margin: CGFloat = 20
+            let lineHeight: CGFloat = 28
+            let lineHeight2: CGFloat = 24
+            let spacing: CGFloat = 8
+
+            let dateAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 22, weight: .bold),
+                .foregroundColor: UIColor.cyan
+            ]
+
+            let locationAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 18, weight: .medium),
+                .foregroundColor: UIColor.yellow
+            ]
+
+            let dateSize = (displayDate as NSString).size(withAttributes: dateAttributes)
+            let locationSize = (location as NSString).size(withAttributes: locationAttributes)
+
+            let textWidth = max(dateSize.width, locationSize.width)
+            let totalHeight = lineHeight + lineHeight2 + spacing
+
+            let startX = image.size.width - textWidth - margin
+            let startY = image.size.height - totalHeight - margin
+
+            let bgRect = CGRect(
+                x: startX - 12,
+                y: startY - 8,
+                width: textWidth + 24,
+                height: totalHeight + 16
+            )
+            ctx.setFillColor(UIColor.black.withAlphaComponent(0.7).cgColor)
+            ctx.fillEllipse(in: bgRect)
+
+            ctx.setStrokeColor(UIColor.white.withAlphaComponent(0.3).cgColor)
+            ctx.setLineWidth(1)
+            ctx.strokeEllipse(in: bgRect.insetBy(dx: -2, dy: -2))
+
+            let dateRect = CGRect(x: startX, y: startY, width: dateSize.width, height: lineHeight)
+            (displayDate as NSString).draw(in: dateRect, withAttributes: dateAttributes)
+
+            let locationRect = CGRect(
+                x: startX,
+                y: startY + lineHeight + spacing,
+                width: locationSize.width,
+                height: lineHeight2
+            )
+            (location as NSString).draw(in: locationRect, withAttributes: locationAttributes)
+
+            ctx.restoreGState()
+        }
+    }
+
+    /// Lưu ảnh vào Photo Library
+    private func savePhoto(photoData: Data, metadata: [String: Any], format: CaptureFormat) {
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { [weak self] status in
             guard status == .authorized || status == .limited else {
                 DispatchQueue.main.async {
@@ -773,7 +875,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
 
                 // Tạo resource options với uniform type identifier
                 let resourceOptions = PHAssetResourceCreationOptions()
-                resourceOptions.uniformTypeIdentifier = self?.getUTType(for: currentFormat)
+                resourceOptions.uniformTypeIdentifier = self?.getUTType(for: format)
 
                 // Thêm photo data với options
                 request.addResource(with: .photo, data: photoData, options: resourceOptions)

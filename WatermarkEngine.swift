@@ -8,6 +8,9 @@
 
 import CoreImage
 import Foundation
+import ImageIO
+import SwiftUI
+import UniformTypeIdentifiers
 import UIKit
 
 // MARK: - WatermarkEngine
@@ -46,7 +49,7 @@ class WatermarkEngine: ObservableObject {
     /// Xóa GPS metadata từ image data
     /// - Parameter imageData: Data ảnh gốc
     /// - Returns: Data ảnh đã xóa GPS
-    func stripGPSMetadata(from imageData: Data) -> Data {
+    nonisolated func stripGPSMetadata(from imageData: Data) -> Data {
         guard let source = CGImageSourceCreateWithData(imageData as CFData, nil) else {
             return imageData
         }
@@ -63,34 +66,32 @@ class WatermarkEngine: ObservableObject {
         mutableMetadata.removeValue(forKey: kCGImagePropertyGPSDictionary as String)
 
         // Tạo output data
-        guard let destinationData = NSMutableData() as CFMutableData? else {
-            return imageData
-        }
+        let destinationData = NSMutableData()
+
+        let typeIdentifier = CGImageSourceGetType(source) ?? (UTType.jpeg.identifier as CFString)
 
         guard let destination = CGImageDestinationCreateWithData(
             destinationData,
-            CGImageSourceGetType(source) ?? kUTTypeJPEG,
+            typeIdentifier,
             1,
             nil
         ) else {
             return imageData
         }
 
-        // Copy image source
-        CGImageSourceAddImageAndMetadata(source, destination, 0, mutableMetadata as CFDictionary)
-
-        // Lấy output data
-        if let outputData = destinationData as Data? {
-            return outputData
+        // Copy image data và metadata
+        if let image = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+            CGImageDestinationAddImage(destination, image, mutableMetadata as CFDictionary)
         }
 
-        return imageData
+        // Lấy output data
+        return destinationData as Data
     }
 
     /// Xóa GPS metadata từ CIImage
     /// - Parameter image: CIImage gốc
     /// - Returns: Data ảnh đã xóa GPS
-    func stripGPSMetadata(from image: CIImage) -> Data? {
+    nonisolated func stripGPSMetadata(from image: CIImage) -> Data? {
         // Convert CIImage to UIImage
         let context = CIContext(options: [.useSoftwareRenderer: false])
 
@@ -178,13 +179,13 @@ class WatermarkEngine: ObservableObject {
         let displayLocation = location ?? fakeLocation
 
         let renderer = UIGraphicsImageRenderer(size: image.size)
-        return renderer.ctx { ctx in
+        return renderer.image { context in
             // Draw original image
             image.draw(at: .zero)
 
             // Draw watermark
             drawWatermark(
-                in: ctx,
+                in: context.cgContext,
                 date: displayDate,
                 location: displayLocation,
                 imageSize: image.size
@@ -199,7 +200,7 @@ class WatermarkEngine: ObservableObject {
     ///   - location: Vị trí hiển thị
     ///   - applyWatermarkFlag: Có áp dụng watermark không
     /// - Returns: Data ảnh đã xử lý
-    func processImage(
+    nonisolated func processImage(
         imageData: Data,
         date: Date = Date(),
         location: String? = nil,
@@ -412,28 +413,5 @@ extension WatermarkEngine {
         let location = locations[randomIndex]
 
         return (location.lat, location.lon)
-    }
-}
-
-// MARK: - UIImage Extension
-extension UIImage {
-    /// Vẽ image vào UIGraphicsImageRenderer context
-    func draw(in ctx: CGContext) {
-        ctx.saveGState()
-        ctx.translateBy(x: 0, y: size.height)
-        ctx.scaleBy(x: 1, y: -1)
-        ctx.draw(self.cgImage!, in: CGRect(origin: .zero, size: size))
-        ctx.restoreGState()
-    }
-}
-
-// MARK: - UIGraphicsImageRenderer Extension
-extension UIGraphicsImageRenderer {
-    /// Tạo image với closure
-    func image(_ draw: (CGContext) -> Void) -> UIImage {
-        let image = image(actions: { ctx in
-            draw(ctx.cgContext)
-        })
-        return image
     }
 }
