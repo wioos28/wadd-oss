@@ -107,8 +107,11 @@ class CameraManager: NSObject, ObservableObject {
     }
 
     deinit {
-        // Stop session synchronously - [weak self] in stopSession() would be nil in deinit
-        captureSession?.stopRunning()
+        // Nonisolated access to captureSession for cleanup in deinit
+        let session = captureSession
+        Task.detached {
+            session?.stopRunning()
+        }
     }
 
     // MARK: - Setup
@@ -253,8 +256,12 @@ class CameraManager: NSObject, ObservableObject {
             session.addOutput(photoOutput)
             self.photoOutput = photoOutput
 
-            // Enable high resolution capture
-            photoOutput.isHighResolutionCaptureEnabled = true
+            // iOS 16+ use maxPhotoDimensions instead of deprecated isHighResolutionCaptureEnabled
+            if #available(iOS 16.0, *) {
+                photoOutput.maxPhotoDimensions = CMVideoDimensions(width: 4032, height: 3024)
+            } else {
+                photoOutput.isHighResolutionCaptureEnabled = true
+            }
 
             // Configure supported photo codecs
             configurePhotoCodecs(photoOutput: photoOutput)
@@ -270,10 +277,6 @@ class CameraManager: NSObject, ObservableObject {
 
         if photoOutput.availablePhotoCodecTypes.contains(.jpeg) {
             print("JPEG codec supported")
-        }
-
-        if photoOutput.availablePhotoCodecTypes.contains(.png) {
-            print("PNG codec supported")
         }
 
         // ProRAW/DNG support
@@ -642,7 +645,6 @@ class CameraManager: NSObject, ObservableObject {
                     rawPixelFormatType: rawFormat,
                     processedFormat: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
                 )
-                photoSettings.isHighResolutionPhotoEnabled = true
             } else {
                 // Fallback to JPEG if ProRAW not available
                 photoSettings = AVCapturePhotoSettings(
@@ -672,17 +674,19 @@ class CameraManager: NSObject, ObservableObject {
         case .PNG:
             // PNG capture (lossless)
             photoSettings = AVCapturePhotoSettings(
-                format: [
-                    kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
-                ]
+                format: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
             )
         }
 
         // Flash mode
         photoSettings.flashMode = flashMode
 
-        // High resolution
-        photoSettings.isHighResolutionPhotoEnabled = true
+        // iOS 16+ use maxPhotoDimensions instead of deprecated isHighResolutionPhotoEnabled
+        if #available(iOS 16.0, *) {
+            photoSettings.maxPhotoDimensions = CMVideoDimensions(width: 4032, height: 3024)
+        } else {
+            photoSettings.isHighResolutionPhotoEnabled = true
+        }
 
         return photoSettings
     }
@@ -751,6 +755,9 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
 
     /// Lưu ảnh vào Photo Library
     private func savePhoto(photoData: Data, metadata: [String: Any]) {
+        // Capture format before going to background thread
+        let currentFormat = settings.captureFormat
+
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { [weak self] status in
             guard status == .authorized || status == .limited else {
                 DispatchQueue.main.async {
@@ -766,7 +773,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
 
                 // Tạo resource options với uniform type identifier
                 let resourceOptions = PHAssetResourceCreationOptions()
-                resourceOptions.uniformTypeIdentifier = self?.getUTType()
+                resourceOptions.uniformTypeIdentifier = self?.getUTType(for: currentFormat)
 
                 // Thêm photo data với options
                 request.addResource(with: .photo, data: photoData, options: resourceOptions)
@@ -791,8 +798,8 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
     }
 
     /// Get UTType string based on capture format
-    private func getUTType() -> String {
-        switch settings.captureFormat {
+    private func getUTType(for format: CaptureFormat) -> String {
+        switch format {
         case .ProRAW, .RAW:
             return "public.dng"
         case .JPEG:

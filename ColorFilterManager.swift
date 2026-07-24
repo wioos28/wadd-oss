@@ -219,7 +219,7 @@ class ColorFilterManager: ObservableObject {
         }
 
         filter.setValue(image, forKey: kCIInputImageKey)
-        filter.setValue(colorAdjustments.grain * 0.5, forKey: kCIInputNoiseLevelKey)
+        filter.setValue(colorAdjustments.grain * 0.5, forKey: "inputNoiseLevel")
         filter.setValue(0.8, forKey: kCIInputSharpnessKey)
 
         return filter.outputImage ?? image
@@ -249,11 +249,7 @@ class ColorFilterManager: ObservableObject {
 
     /// Blend filtered image with original based on intensity
     private func blendWithOriginal(original: CIImage, filtered: CIImage, intensity: Float) -> CIImage {
-        guard let blendFilter = CIFilter(name: "CILinearDodgeBlendMode") else {
-            return filtered
-        }
-
-        // Use dissolvBlendMode for intensity blending
+        // Use CIDissolveTransition for intensity blending
         guard let dissolveFilter = CIFilter(name: "CIDissolveTransition") else {
             return filtered
         }
@@ -430,7 +426,6 @@ class FilterPreset: Identifiable {
         var data: [Float] = []
 
         let content = String(data: lutData, encoding: .utf8) ?? ""
-        var isDataSection = false
 
         for line in content.components(separatedBy: .newlines) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
