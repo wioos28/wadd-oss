@@ -727,6 +727,7 @@ struct WhiteBalanceControlsView: View {
 /// Nút chụp ảnh
 struct CaptureButtonView: View {
     @ObservedObject var cameraManager: CameraManager
+    @State private var isFlash = false
 
     var body: some View {
         HStack(spacing: 32) {
@@ -745,6 +746,15 @@ struct CaptureButtonView: View {
 
             // Capture button
             Button(action: {
+                // Flash animation khi chụp
+                withAnimation(.easeOut(duration: 0.1)) {
+                    isFlash = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation {
+                        isFlash = false
+                    }
+                }
                 cameraManager.capturePhoto()
             }) {
                 ZStack {
@@ -760,7 +770,7 @@ struct CaptureButtonView: View {
                 }
             }
             .disabled(!cameraManager.canCapture)
-            .scaleEffect(cameraManager.canCapture ? 1.0 : 0.9)
+            .scaleEffect(isFlash ? 0.85 : (cameraManager.canCapture ? 1.0 : 0.9))
             .animation(.spring(), value: cameraManager.canCapture)
 
             // Camera switch button

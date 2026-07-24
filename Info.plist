@@ -41,5 +41,7 @@
 	<string>Pro Camera App cần lưu ảnh vào thư viện ảnh của bạn.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Pro Camera App cần truy cập thư viện ảnh để lưu và quản lý ảnh đã chụp.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Pro Camera App cần truy cập micro để quay video với âm thanh.</string>
 </dict>
 </plist>

@@ -11,6 +11,7 @@ import Combine
 import CoreImage
 import Photos
 import SwiftUI
+import UIKit
 
 // MARK: - CameraManager
 /// ViewModel chính quản lý toàn bộ hoạt động camera
@@ -127,10 +128,50 @@ class CameraManager: NSObject, ObservableObject {
             .store(in: &cancellables)
     }
 
+    // MARK: - Permission
+
+    /// Kiểm tra và yêu cầu quyền Camera
+    func requestCameraPermission() async -> Bool {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+
+        switch status {
+        case .authorized:
+            return true
+        case .notDetermined:
+            return await AVCaptureDevice.requestAccess(for: .video)
+        case .denied, .restricted:
+            state = .error("Quyền truy cập camera bị từ chối. Vui lòng vào Cài đặt để bật quyền.")
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
+    /// Kiểm tra và yêu cầu quyền Photo Library
+    func requestPhotoLibraryPermission() async -> Bool {
+        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+
+        switch status {
+        case .authorized, .limited:
+            return true
+        case .notDetermined:
+            return await PHPhotoLibrary.requestAuthorization(for: .addOnly) == .authorized
+        case .denied, .restricted:
+            state = .error("Quyền truy cập thư viện ảnh bị từ chối. Vui lòng vào Cài đặt để bật quyền.")
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
     // MARK: - Session Management
 
     /// Khởi tạo và cấu hình AVCaptureSession
     func setupSession() async {
+        // Yêu cầu quyền camera trước khi setup
+        let hasPermission = await requestCameraPermission()
+        guard hasPermission else { return }
+
         state = .configuring
 
         let session = AVCaptureSession()
@@ -630,9 +671,28 @@ class CameraManager: NSObject, ObservableObject {
         state = .capturing
         canCapture = false
 
+        // Phát âm thanh chụp ảnh
+        playShutterSound()
+
+        // Rung nhẹ khi chụp (haptic feedback)
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
         let photoSettings = createPhotoSettings()
 
         photoOutput.capturePhoto(with: photoSettings, delegate: self)
+    }
+
+    /// Phát âm thanh shutter
+    private func playShutterSound() {
+        guard let soundURL = Bundle.main.url(forResource: "shutter", withExtension: "caf") else {
+            // Nếu không có file âm thanh tùy chỉnh, dùng SystemSoundID
+            AudioServicesPlaySystemSound(1108) // camera shutter sound
+            return
+        }
+        var soundID: SystemSoundID = 0
+        AudioServicesCreateSystemSoundID(soundURL as CFURL, &soundID)
+        AudioServicesPlaySystemSound(soundID)
     }
 
     /// Tạo PhotoSettings dựa trên định dạng đã chọn
