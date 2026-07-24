@@ -7,9 +7,8 @@ workflows:
     max_build_duration: 60
     environment:
       ios_signing:
-        configuration: Release
-      vars:
-        BUNDLE_ID: com.procamera.app
+        distribution: app_store
+        bundle_identifier: com.procamera.app
     scripts:
       - name: Install dependencies
         script: |
@@ -41,7 +40,8 @@ workflows:
     max_build_duration: 30
     environment:
       ios_signing:
-        configuration: Debug
+        distribution: development
+        bundle_identifier: com.procamera.app
     scripts:
       - name: Build iOS Debug
         script: |
@@ -61,7 +61,8 @@ workflows:
     max_build_duration: 45
     environment:
       ios_signing:
-        configuration: Debug
+        distribution: development
+        bundle_identifier: com.procamera.app
     scripts:
       - name: Run Unit Tests
         script: |
