@@ -1,0 +1,203 @@
+# Development Tools Packages
+# These packages are for development environment
+
+# Version Control
+git
+gh (GitHub CLI)
+
+# Browsers
+firefox
+chromium-browser
+
+# IDEs and Editors
+vscode
+vim
+nano
+neovim
+
+# Programming Languages
+nodejs (Node.js 20.x)
+npm
+yarn
+python3
+python3-pip
+pipx
+rust (via rustup)
+go (Go 1.21)
+java (OpenJDK 17)
+
+# Development Tools
+cmake
+gcc
+g++
+make
+docker
+docker-compose
+build-essential
+
+# Python Tools
+pipenv
+poetry
+virtualenv
+pylint
+flake8
+black
+isort
+mypy
+pytest
+
+# Node.js Tools
+typescript
+ts-node
+nodemon
+yarn
+pnpm
+
+# Rust Tools
+cargo
+rustc
+rustup
+
+# Docker
+docker-ce
+docker-ce-cli
+containerd.io
+docker-buildx-plugin
+docker-compose-plugin
+
+# System Tools
+htop
+tmux
+screen
+neofetch
+tree
+curl
+wget
+openssh-client
+openssh-server
+zip
+unzip
+tar
+gzip
+bzip2
+xz-utils
+
+# Networking
+net-tools
+iputils-ping
+dnsutils
+nmap
+tcpdump
+
+# Development Libraries
+libssl-dev
+libncurses-dev
+libreadline-dev
+libffi-dev
+liblzma-dev
+libbz2-dev
+zlib1g-dev
+libsqlite3-dev
+libxml2-dev
+libxslt1-dev
+
+# Database
+sqlite3
+postgresql
+mysql-server
+redis-server
+mongodb
+
+# Web Servers
+nginx
+apache2
+
+# Media
+vlc
+ffmpeg
+imagemagick
+
+# Office
+libreoffice
+evince (PDF viewer)
+
+# System Monitoring
+sysstat
+iotop
+iftop
+nethogs
+glances
+
+# Terminal Multiplexers
+tmux
+screen
+
+# Text Editors
+vim
+nano
+neovim
+emacs
+
+# Git Tools
+git
+gitk
+git-gui
+git-flow
+git-lfs
+
+# Docker Tools
+docker
+docker-compose
+docker-machine
+portainer
+
+# Kubernetes Tools
+kubectl
+minikube
+helm
+k9s
+
+# Cloud Tools
+aws-cli
+gcloud
+azure-cli
+terraform
+ansible
+
+# API Testing
+postman
+insomnia
+httpie
+
+# Documentation
+mkdocs
+sphinx
+doxygen
+
+# CI/CD
+jenkins
+gitlab-runner
+github-actions-runner
+
+# Monitoring
+prometheus
+grafana
+elasticsearch
+logstash
+kibana
+
+# Security
+nmap
+wireshark
+burp-suite
+metasploit
+john
+hashcat
+
+# Miscellaneous
+screenfetch
+fortune
+cowsay
+figlet
+toilet
+cmatrix
