@@ -20,12 +20,12 @@ struct ContentView: View {
     @StateObject private var filmSimulationManager = FilmSimulationManager()
     @StateObject private var watermarkEngine = WatermarkEngine()
 
-    @State private var showingControls = true
+    @State private var showingSideMenu = false
     @State private var showingFilterPanel = false
     @State private var showingFilmPanel = false
     @State private var showingSettings = false
-    @State private var showingProTools = false
     @State private var showError = false
+    @State private var isCapturing = false
 
     // MARK: - Overlay Options
     @State private var showGrid3x3 = true
@@ -73,52 +73,106 @@ struct ContentView: View {
                     .allowsHitTesting(false)
             }
 
-            // MARK: - Top Bar
+            // MARK: - Compact Histogram (Top Right)
+            if showHistogram {
+                VStack {
+                    HStack {
+                        Spacer()
+                        CompactHistogramView(histogramManager: histogramManager)
+                            .padding(.trailing, 16)
+                            .padding(.top, 60)
+                    }
+                    Spacer()
+                }
+                .transition(.opacity)
+            }
+
+            // MARK: - Top Bar (Minimal)
             VStack {
-                TopBarView(
-                    cameraManager: cameraManager,
-                    watermarkEngine: watermarkEngine,
-                    showingSettings: $showingSettings,
-                    showingFilterPanel: $showingFilterPanel,
-                    showingFilmPanel: $showingFilmPanel,
-                    showingProTools: $showingProTools
-                )
+                HStack {
+                    // Menu button
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3)) {
+                            showingSideMenu.toggle()
+                        }
+                    }) {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.5), radius: 2)
+                    }
+
+                    Spacer()
+
+                    // Format selector
+                    FormatSelectorView(cameraManager: cameraManager)
+
+                    Spacer()
+
+                    // Privacy Mode toggle
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3)) {
+                            watermarkEngine.isPrivacyModeEnabled.toggle()
+                        }
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(watermarkEngine.isPrivacyModeEnabled ? Color.blue.opacity(0.8) : Color.gray.opacity(0.5))
+                                .frame(width: 36, height: 36)
+
+                            Image(systemName: watermarkEngine.isPrivacyModeEnabled ? "lock.shield.fill" : "eye.slash")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .shadow(color: watermarkEngine.isPrivacyModeEnabled ? .blue.opacity(0.5) : .clear, radius: 4)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
 
                 Spacer()
 
                 // MARK: - Status Bar (ISO, Shutter, Aperture)
-                if showingControls {
-                    StatusBarView(cameraManager: cameraManager)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
+                StatusBarView(cameraManager: cameraManager)
 
                 Spacer()
 
-                // MARK: - Compact Histogram (Top Right)
-                if showHistogram {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            CompactHistogramView(histogramManager: histogramManager)
-                                .padding(.trailing, 16)
-                                .padding(.top, 8)
-                        }
-                        Spacer()
-                    }
-                    .transition(.opacity)
-                }
-
-                // MARK: - Control Panel
-                if showingControls {
-                    ControlPanelView(cameraManager: cameraManager)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-
-                // MARK: - Capture Button & Bottom Controls
-                CaptureButtonView(cameraManager: cameraManager)
+                // MARK: - Capture Button
+                CaptureButtonView(cameraManager: cameraManager, isCapturing: $isCapturing)
             }
-            .animation(.easeInOut(duration: 0.3), value: showingControls)
-            .animation(.easeInOut(duration: 0.3), value: showingFilterPanel)
+
+            // MARK: - Side Menu (Slide from Left)
+            if showingSideMenu {
+                // Background tap to close
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.3)) {
+                            showingSideMenu = false
+                        }
+                    }
+
+                // Menu content
+                HStack {
+                    SideMenuView(
+                        cameraManager: cameraManager,
+                        colorFilterManager: colorFilterManager,
+                        watermarkEngine: watermarkEngine,
+                        showGrid3x3: $showGrid3x3,
+                        showLeveler: $showLeveler,
+                        showHistogram: $showHistogram,
+                        showFocusPeaking: $showFocusPeaking,
+                        showingFilterPanel: $showingFilterPanel,
+                        showingFilmPanel: $showingFilmPanel,
+                        showingSettings: $showingSettings,
+                        showingSideMenu: $showingSideMenu
+                    )
+                    .frame(width: 280)
+                    .transition(.move(edge: .leading))
+
+                    Spacer()
+                }
+            }
 
             // MARK: - Filter Panel (Slide up from bottom)
             if showingFilterPanel {
@@ -139,24 +193,6 @@ struct ContentView: View {
                     FilmSimulationPanelView(
                         filmSimulationManager: filmSimulationManager,
                         showingFilmPanel: $showingFilmPanel
-                    )
-                    .transition(.move(edge: .bottom))
-                }
-            }
-
-            // MARK: - Pro Tools Panel
-            if showingProTools {
-                VStack {
-                    Spacer()
-                    ProToolsPanelView(
-                        motionManager: motionManager,
-                        histogramManager: histogramManager,
-                        focusPeakingManager: focusPeakingManager,
-                        showGrid3x3: $showGrid3x3,
-                        showLeveler: $showLeveler,
-                        showHistogram: $showHistogram,
-                        showFocusPeaking: $showFocusPeaking,
-                        showingProTools: $showingProTools
                     )
                     .transition(.move(edge: .bottom))
                 }
@@ -214,25 +250,228 @@ struct ContentView: View {
     }
 
     private func setupManagers() {
-        // Start motion updates for level indicator
         motionManager.startUpdates()
-
-        // Start histogram analysis
         histogramManager.startAnalysis()
     }
 
     // MARK: - Helpers
 
     private func handleTapToFocus(at location: CGPoint) {
-        // Convert tap location to normalized coordinates
-        // Assuming full screen
         let normalizedX = location.x / UIScreen.main.bounds.width
         let normalizedY = location.y / UIScreen.main.bounds.height
         cameraManager.setFocusPoint(CGPoint(x: normalizedX, y: normalizedY))
     }
 }
 
-// MARK: - TopBarView
+// MARK: - SideMenuView
+/// Menu bên trái chứa tất cả controls
+struct SideMenuView: View {
+    @ObservedObject var cameraManager: CameraManager
+    @ObservedObject var colorFilterManager: ColorFilterManager
+    @ObservedObject var watermarkEngine: WatermarkEngine
+
+    @Binding var showGrid3x3: Bool
+    @Binding var showLeveler: Bool
+    @Binding var showHistogram: Bool
+    @Binding var showFocusPeaking: Bool
+    @Binding var showingFilterPanel: Bool
+    @Binding var showingFilmPanel: Bool
+    @Binding var showingSettings: Bool
+    @Binding var showingSideMenu: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack {
+                Image(systemName: "camera.fill")
+                    .foregroundColor(.blue)
+                Text("Pro Camera")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
+
+            Divider().background(Color.gray.opacity(0.5))
+
+            // MARK: - Quick Actions
+            VStack(spacing: 4) {
+                // Camera Switch
+                SideMenuRow(
+                    icon: "camera.rotate",
+                    title: "Đổi Camera",
+                    color: .white
+                ) {
+                    cameraManager.switchCamera()
+                    closeMenu()
+                }
+
+                // Flash/Torch
+                SideMenuRow(
+                    icon: cameraManager.torchMode == .on ? "bolt.fill" : "bolt.slash.fill",
+                    title: cameraManager.torchMode == .on ? "Tắt Đèn" : "Bật Đèn",
+                    color: .yellow
+                ) {
+                    cameraManager.setTorch(mode: cameraManager.torchMode == .on ? .off : .on)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+
+            Divider().background(Color.gray.opacity(0.5))
+
+            // MARK: - Pro Tools
+            VStack(spacing: 4) {
+                SideMenuToggleRow(
+                    icon: "squareshape.split.3x3",
+                    title: "Lưới 3x3",
+                    isOn: $showGrid3x3
+                )
+
+                SideMenuToggleRow(
+                    icon: "ruler",
+                    title: "Độ Nghiêng",
+                    isOn: $showLeveler
+                )
+
+                SideMenuToggleRow(
+                    icon: "chart.bar",
+                    title: "Histogram",
+                    isOn: $showHistogram
+                )
+
+                SideMenuToggleRow(
+                    icon: "scope",
+                    title: "Focus Peaking",
+                    isOn: $showFocusPeaking
+                )
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+
+            Divider().background(Color.gray.opacity(0.5))
+
+            // MARK: - Panels
+            VStack(spacing: 4) {
+                SideMenuRow(
+                    icon: "camera.filters",
+                    title: "Bộ Lọc Màu",
+                    color: .purple
+                ) {
+                    showingFilterPanel = true
+                    closeMenu()
+                }
+
+                SideMenuRow(
+                    icon: "film",
+                    title: "Mô Phỏng Phim",
+                    color: .orange
+                ) {
+                    showingFilmPanel = true
+                    closeMenu()
+                }
+
+                SideMenuRow(
+                    icon: "gearshape.fill",
+                    title: "Cài Đặt",
+                    color: .gray
+                ) {
+                    showingSettings = true
+                    closeMenu()
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+
+            Spacer()
+
+            // Close button
+            Button(action: {
+                closeMenu()
+            }) {
+                HStack {
+                    Image(systemName: "xmark.circle.fill")
+                    Text("Đóng Menu")
+                }
+                .foregroundColor(.gray)
+                .font(.caption)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .environment(\.colorScheme, .dark)
+        )
+    }
+
+    private func closeMenu() {
+        withAnimation(.spring(response: 0.3)) {
+            showingSideMenu = false
+        }
+    }
+}
+
+// MARK: - SideMenuRow
+/// Row trong side menu
+struct SideMenuRow: View {
+    let icon: String
+    let title: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .frame(width: 24)
+                    .foregroundColor(color)
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(8)
+        }
+    }
+}
+
+// MARK: - SideMenuToggleRow
+/// Toggle row trong side menu
+struct SideMenuToggleRow: View {
+    let icon: String
+    let title: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .frame(width: 24)
+                .foregroundColor(isOn ? .blue : .gray)
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.white)
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .tint(.blue)
+                .labelsHidden()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(8)
+    }
+}
+
+// MARK: - TopBarView (Simplified - just format and privacy)
 /// Top navigation bar
 struct TopBarView: View {
     @ObservedObject var cameraManager: CameraManager
@@ -244,15 +483,10 @@ struct TopBarView: View {
 
     var body: some View {
         HStack {
-            // Close button
-            Button(action: {
-                // Exit app or dismiss
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2)
-            }
+            Spacer()
+
+            // Format selector
+            FormatSelectorView(cameraManager: cameraManager)
 
             Spacer()
 
@@ -273,51 +507,6 @@ struct TopBarView: View {
                 }
             }
             .shadow(color: watermarkEngine.isPrivacyModeEnabled ? .blue.opacity(0.5) : .clear, radius: 4)
-
-            // Format selector
-            FormatSelectorView(cameraManager: cameraManager)
-
-            Spacer()
-
-            // Pro Tools button
-            Button(action: {
-                showingProTools.toggle()
-            }) {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2)
-            }
-
-            // Film Simulation button
-            Button(action: {
-                showingFilmPanel.toggle()
-            }) {
-                Image(systemName: "film")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2)
-            }
-
-            // Filter button
-            Button(action: {
-                showingFilterPanel.toggle()
-            }) {
-                Image(systemName: "camera.filters")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2)
-            }
-
-            // Settings button
-            Button(action: {
-                showingSettings.toggle()
-            }) {
-                Image(systemName: "gearshape.fill")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2)
-            }
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -363,29 +552,10 @@ struct StatusBarView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // ISO
-            InfoPill(
-                icon: "iso",
-                text: cameraManager.settings.isoDisplay
-            )
-
-            // Shutter Speed
-            InfoPill(
-                icon: "shutter.speed",
-                text: cameraManager.settings.shutterSpeedDisplay
-            )
-
-            // Aperture
-            InfoPill(
-                icon: "aperture",
-                text: cameraManager.settings.apertureDisplay
-            )
-
-            // EV
-            InfoPill(
-                icon: "exposure",
-                text: cameraManager.settings.evDisplay
-            )
+            InfoPill(icon: "iso", text: cameraManager.settings.isoDisplay)
+            InfoPill(icon: "shutter.speed", text: cameraManager.settings.shutterSpeedDisplay)
+            InfoPill(icon: "aperture", text: cameraManager.settings.apertureDisplay)
+            InfoPill(icon: "exposure", text: cameraManager.settings.evDisplay)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -422,312 +592,11 @@ struct InfoPill: View {
     }
 }
 
-// MARK: - ControlPanelView
-/// Panel điều khiển chính
-struct ControlPanelView: View {
-    @ObservedObject var cameraManager: CameraManager
-    @State private var selectedTab: ControlTab = .manual
-
-    enum ControlTab: String, CaseIterable {
-        case manual = "Manual"
-        case color = "Color"
-        case wb = "WB"
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Tab selector
-            Picker("Control Tab", selection: $selectedTab) {
-                ForEach(ControlTab.allCases, id: \.self) { tab in
-                    Text(tab.rawValue).tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 40)
-            .padding(.bottom, 8)
-
-            // Control content
-            switch selectedTab {
-            case .manual:
-                ManualControlsView(cameraManager: cameraManager)
-            case .color:
-                ColorControlsView(cameraManager: cameraManager)
-            case .wb:
-                WhiteBalanceControlsView(cameraManager: cameraManager)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color.black.opacity(0.7))
-        .cornerRadius(20)
-    }
-}
-
-// MARK: - ManualControlsView
-/// Điều khiển thủ công: ISO, Shutter Speed, EV
-struct ManualControlsView: View {
-    @ObservedObject var cameraManager: CameraManager
-
-    var body: some View {
-        VStack(spacing: 12) {
-            // ISO Slider
-            HStack {
-                Text("ISO")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.iso,
-                       in: 25...2500,
-                       step: 25) { _ in
-                    cameraManager.setISO(cameraManager.settings.iso)
-                }
-                .tint(.orange)
-
-                Text(cameraManager.settings.isoDisplay)
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 60, alignment: .trailing)
-            }
-
-            // Shutter Speed Slider
-            HStack {
-                Text("SS")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.shutterSpeed,
-                       in: 0.001...2.0,
-                       step: 0.001) { _ in
-                    cameraManager.setShutterSpeed(cameraManager.settings.shutterSpeed)
-                }
-                .tint(.blue)
-
-                Text(cameraManager.settings.shutterSpeedDisplay)
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 60, alignment: .trailing)
-            }
-
-            // EV Slider
-            HStack {
-                Text("EV")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.exposureCompensation,
-                       in: -3.0...3.0,
-                       step: 0.3) { _ in
-                    cameraManager.setExposureCompensation(cameraManager.settings.exposureCompensation)
-                }
-                .tint(.green)
-
-                Text(cameraManager.settings.evDisplay)
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 60, alignment: .trailing)
-            }
-
-            // Torch Toggle
-            HStack {
-                Text("Torch")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Toggle("", isOn: Binding(
-                    get: { cameraManager.torchMode == .on },
-                    set: { isOn in
-                        cameraManager.setTorch(mode: isOn ? .on : .off)
-                    }
-                ))
-                .tint(.yellow)
-
-                Spacer()
-
-                if cameraManager.torchMode == .on {
-                    Slider(value: $cameraManager.torchLevel, in: 0...1) { _ in
-                        cameraManager.setTorch(mode: .on, level: cameraManager.torchLevel)
-                    }
-                    .frame(width: 100)
-                    .tint(.yellow)
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-    }
-}
-
-// MARK: - ColorControlsView
-/// Điều chỉnh màu sắc
-struct ColorControlsView: View {
-    @ObservedObject var cameraManager: CameraManager
-
-    var body: some View {
-        VStack(spacing: 12) {
-            // Saturation
-            HStack {
-                Text("Sat")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.saturation,
-                       in: 0...2.0,
-                       step: 0.05) { _ in
-                    cameraManager.colorFilterManager?.setSaturation(cameraManager.settings.saturation)
-                }
-                .tint(.purple)
-
-                Text(String(format: "%.1f", cameraManager.settings.saturation))
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 40, alignment: .trailing)
-            }
-
-            // Contrast
-            HStack {
-                Text("Con")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.contrast,
-                       in: 0...2.0,
-                       step: 0.05) { _ in
-                    cameraManager.colorFilterManager?.setContrast(cameraManager.settings.contrast)
-                }
-                .tint(.pink)
-
-                Text(String(format: "%.1f", cameraManager.settings.contrast))
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 40, alignment: .trailing)
-            }
-
-            // Brightness
-            HStack {
-                Text("Bri")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.brightness,
-                       in: -1.0...1.0,
-                       step: 0.05) { _ in
-                    cameraManager.colorFilterManager?.setBrightness(cameraManager.settings.brightness)
-                }
-                .tint(.cyan)
-
-                Text(String(format: "%.1f", cameraManager.settings.brightness))
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 40, alignment: .trailing)
-            }
-
-            // Vignette
-            HStack {
-                Text("Vig")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.vignette,
-                       in: 0...1.0,
-                       step: 0.05) { _ in
-                    cameraManager.colorFilterManager?.setVignette(cameraManager.settings.vignette)
-                }
-                .tint(.gray)
-
-                Text(String(format: "%.1f", cameraManager.settings.vignette))
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 40, alignment: .trailing)
-            }
-        }
-        .padding(.horizontal, 12)
-    }
-}
-
-// MARK: - WhiteBalanceControlsView
-/// Điều khiển White Balance
-struct WhiteBalanceControlsView: View {
-    @ObservedObject var cameraManager: CameraManager
-
-    var body: some View {
-        VStack(spacing: 12) {
-            // Temperature Slider
-            HStack {
-                Text("Temp")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.customTemperature,
-                       in: 2000...10000,
-                       step: 100) { _ in
-                    cameraManager.setWhiteBalanceTemperature(cameraManager.settings.customTemperature)
-                }
-                .tint(.orange)
-
-                Text("\(Int(cameraManager.settings.customTemperature))K")
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 50, alignment: .trailing)
-            }
-
-            // Tint Slider
-            HStack {
-                Text("Tint")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-
-                Slider(value: $cameraManager.settings.tint,
-                       in: -1.0...1.0,
-                       step: 0.05) { _ in
-                    cameraManager.setTint(cameraManager.settings.tint)
-                }
-                .tint(.green)
-
-                Text(String(format: "%.1f", cameraManager.settings.tint))
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .frame(width: 40, alignment: .trailing)
-            }
-
-            // Quick Presets
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(WhiteBalancePreset.allCases) { preset in
-                        Button(action: {
-                            cameraManager.setWhiteBalancePreset(preset)
-                        }) {
-                            Text(preset.rawValue)
-                                .font(.caption)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(cameraManager.settings.whiteBalancePreset == preset
-                                           ? Color.white.opacity(0.3)
-                                           : Color.gray.opacity(0.3))
-                                .cornerRadius(8)
-                        }
-                        .foregroundColor(.white)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-    }
-}
-
 // MARK: - CaptureButtonView
 /// Nút chụp ảnh
 struct CaptureButtonView: View {
     @ObservedObject var cameraManager: CameraManager
-    @State private var isFlash = false
+    @Binding var isCapturing: Bool
 
     var body: some View {
         HStack(spacing: 32) {
@@ -746,13 +615,12 @@ struct CaptureButtonView: View {
 
             // Capture button
             Button(action: {
-                // Flash animation khi chụp
                 withAnimation(.easeOut(duration: 0.1)) {
-                    isFlash = true
+                    isCapturing = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     withAnimation {
-                        isFlash = false
+                        isCapturing = false
                     }
                 }
                 cameraManager.capturePhoto()
@@ -770,7 +638,7 @@ struct CaptureButtonView: View {
                 }
             }
             .disabled(!cameraManager.canCapture)
-            .scaleEffect(isFlash ? 0.85 : (cameraManager.canCapture ? 1.0 : 0.9))
+            .scaleEffect(isCapturing ? 0.85 : (cameraManager.canCapture ? 1.0 : 0.9))
             .animation(.spring(), value: cameraManager.canCapture)
 
             // Camera switch button
@@ -803,9 +671,7 @@ struct FilterPanelView: View {
                 Text("Color Filters")
                     .font(.headline)
                     .foregroundColor(.white)
-
                 Spacer()
-
                 Button(action: {
                     showingFilterPanel = false
                 }) {
@@ -818,23 +684,17 @@ struct FilterPanelView: View {
             // Filter presets
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    // No filter
                     FilterPreviewButton(
                         name: "None",
                         isSelected: colorFilterManager.currentLUT == nil,
-                        action: {
-                            colorFilterManager.removeFilter()
-                        }
+                        action: { colorFilterManager.removeFilter() }
                     )
 
-                    // Built-in filters
                     ForEach(FilterPreset.builtInPresets) { preset in
                         FilterPreviewButton(
                             name: preset.name,
                             isSelected: colorFilterManager.currentLUT?.id == preset.id,
-                            action: {
-                                colorFilterManager.applyFilter(preset)
-                            }
+                            action: { colorFilterManager.applyFilter(preset) }
                         )
                     }
                 }
@@ -846,10 +706,8 @@ struct FilterPanelView: View {
                 Text("Intensity")
                     .font(.caption)
                     .foregroundColor(.gray)
-
                 Slider(value: $colorFilterManager.filterIntensity, in: 0...1.0)
                     .tint(.blue)
-
                 Text(String(format: "%.0f%%", colorFilterManager.filterIntensity * 100))
                     .font(.caption)
                     .foregroundColor(.white)
@@ -872,7 +730,6 @@ struct FilterPanelView: View {
 }
 
 // MARK: - FilterPreviewButton
-/// Button hiển thị preview filter
 struct FilterPreviewButton: View {
     let name: String
     let isSelected: Bool
@@ -892,7 +749,6 @@ struct FilterPreviewButton: View {
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
                     )
-
                 Text(name)
                     .font(.caption2)
                     .foregroundColor(.white)
@@ -916,9 +772,7 @@ struct SettingsPanelView: View {
                 Text("Settings")
                     .font(.headline)
                     .foregroundColor(.white)
-
                 Spacer()
-
                 Button(action: {
                     showingSettings = false
                 }) {
@@ -987,7 +841,7 @@ struct SettingsPanelView: View {
 
             Divider().background(Color.gray)
 
-            // MARK: - Privacy Mode Settings
+            // Privacy Mode Settings
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "lock.shield.fill")
@@ -1062,7 +916,6 @@ struct SettingsPanelView: View {
 }
 
 // MARK: - SettingRow
-/// Row trong settings
 struct SettingRow<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
@@ -1078,7 +931,6 @@ struct SettingRow<Content: View>: View {
 }
 
 // MARK: - Grid3x3Overlay
-/// Lưới 3x3 (Rule of Thirds) overlay trên camera preview
 struct Grid3x3Overlay: View {
     var body: some View {
         GeometryReader { geometry in
@@ -1088,7 +940,6 @@ struct Grid3x3Overlay: View {
             let thirdHeight = height / 3
 
             Canvas { context, size in
-                // Draw vertical lines
                 for i in 1...2 {
                     let x = thirdWidth * CGFloat(i)
                     var path = Path()
@@ -1097,7 +948,6 @@ struct Grid3x3Overlay: View {
                     context.stroke(path, with: .color(.white.opacity(0.5)), lineWidth: 0.5)
                 }
 
-                // Draw horizontal lines
                 for i in 1...2 {
                     let y = thirdHeight * CGFloat(i)
                     var path = Path()
@@ -1106,7 +956,6 @@ struct Grid3x3Overlay: View {
                     context.stroke(path, with: .color(.white.opacity(0.5)), lineWidth: 0.5)
                 }
 
-                // Draw intersection points (power points)
                 let points = [
                     CGPoint(x: thirdWidth, y: thirdHeight),
                     CGPoint(x: thirdWidth * 2, y: thirdHeight),
@@ -1129,7 +978,6 @@ struct Grid3x3Overlay: View {
 }
 
 // MARK: - LevelIndicatorOverlay
-/// Vạch chỉ thị cân bằng điện tử
 struct LevelIndicatorOverlay: View {
     @ObservedObject var motionManager: MotionManager
 
@@ -1141,26 +989,22 @@ struct LevelIndicatorOverlay: View {
             let indicatorHeight: CGFloat = 4
 
             ZStack {
-                // Main level line
                 RoundedRectangle(cornerRadius: 2)
                     .fill(motionManager.levelColor)
                     .frame(width: indicatorWidth, height: indicatorHeight)
                     .position(x: centerX, y: centerY)
                     .rotationEffect(.degrees(motionManager.indicatorRotation))
 
-                // Center reference point
                 Circle()
                     .fill(Color.white.opacity(0.8))
                     .frame(width: 8, height: 8)
                     .position(x: centerX, y: centerY)
 
-                // Deviation text
                 Text(motionManager.deviationText)
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(motionManager.levelColor)
                     .position(x: centerX, y: centerY + 20)
 
-                // Fixed reference lines (horizontal)
                 Path { path in
                     path.move(to: CGPoint(x: centerX - 40, y: centerY))
                     path.addLine(to: CGPoint(x: centerX - 15, y: centerY))
@@ -1177,8 +1021,7 @@ struct LevelIndicatorOverlay: View {
     }
 }
 
-// MARK: - ProToolsPanelView
-/// Panel hiển thị các công cụ chuyên nghiệp
+// MARK: - ProToolsPanelView (Legacy - kept for compatibility)
 struct ProToolsPanelView: View {
     @ObservedObject var motionManager: MotionManager
     @ObservedObject var histogramManager: HistogramManager
@@ -1192,17 +1035,12 @@ struct ProToolsPanelView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // Header
             HStack {
                 Text("Pro Tools")
                     .font(.headline)
                     .foregroundColor(.white)
-
                 Spacer()
-
-                Button(action: {
-                    showingProTools = false
-                }) {
+                Button(action: { showingProTools = false }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.white)
                 }
@@ -1211,7 +1049,6 @@ struct ProToolsPanelView: View {
 
             Divider().background(Color.gray)
 
-            // Grid Toggle
             Toggle(isOn: $showGrid3x3) {
                 HStack {
                     Image(systemName: "squareshape.split.3x3")
@@ -1223,7 +1060,6 @@ struct ProToolsPanelView: View {
             .tint(.blue)
             .padding(.horizontal, 16)
 
-            // Leveler Toggle
             Toggle(isOn: $showLeveler) {
                 HStack {
                     Image(systemName: "ruler")
@@ -1235,7 +1071,6 @@ struct ProToolsPanelView: View {
             .tint(.blue)
             .padding(.horizontal, 16)
 
-            // Histogram Toggle
             Toggle(isOn: $showHistogram) {
                 HStack {
                     Image(systemName: "chart.bar")
@@ -1247,24 +1082,19 @@ struct ProToolsPanelView: View {
             .tint(.blue)
             .padding(.horizontal, 16)
 
-            // Focus Peaking Controls
             FocusPeakingControls(focusPeakingManager: focusPeakingManager)
                 .padding(.horizontal, 16)
 
             Divider().background(Color.gray)
 
-            // Level Status
             HStack {
                 Circle()
                     .fill(motionManager.levelColor)
                     .frame(width: 10, height: 10)
-
                 Text(motionManager.isLevel ? "Device is Level" : "Adjust device angle")
                     .font(.caption)
                     .foregroundColor(.gray)
-
                 Spacer()
-
                 Text(String(format: "Roll: %+.1f°", motionManager.roll))
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundColor(.white)
@@ -1278,31 +1108,24 @@ struct ProToolsPanelView: View {
 }
 
 // MARK: - FilmSimulationPanelView
-/// Panel chọn và điều chỉnh mô phỏng phim
 struct FilmSimulationPanelView: View {
     @ObservedObject var filmSimulationManager: FilmSimulationManager
     @Binding var showingFilmPanel: Bool
 
     var body: some View {
         VStack(spacing: 16) {
-            // Header
             HStack {
                 Text("Film Simulation")
                     .font(.headline)
                     .foregroundColor(.white)
-
                 Spacer()
-
-                Button(action: {
-                    showingFilmPanel = false
-                }) {
+                Button(action: { showingFilmPanel = false }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.white)
                 }
             }
             .padding(.horizontal, 16)
 
-            // Film presets horizontal scroll
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(FilmPresetType.allCases) { filmType in
@@ -1320,7 +1143,6 @@ struct FilmSimulationPanelView: View {
                 .padding(.horizontal, 16)
             }
 
-            // Film description
             if filmSimulationManager.currentFilm != .original {
                 Text(filmSimulationManager.currentFilm.description)
                     .font(.caption)
@@ -1329,22 +1151,18 @@ struct FilmSimulationPanelView: View {
                     .multilineTextAlignment(.center)
             }
 
-            // Intensity slider
             HStack {
                 Text("Intensity")
                     .font(.caption)
                     .foregroundColor(.gray)
-
                 Slider(value: $filmSimulationManager.intensity, in: 0...1.0)
                     .tint(filmSimulationManager.currentFilm.accentColor)
-
                 Text(String(format: "%.0f%%", filmSimulationManager.intensity * 100))
                     .font(.caption)
                     .foregroundColor(.white)
             }
             .padding(.horizontal, 16)
 
-            // Reset button
             Button(action: {
                 withAnimation {
                     filmSimulationManager.reset()
@@ -1365,7 +1183,6 @@ struct FilmSimulationPanelView: View {
 }
 
 // MARK: - FilmPresetButton
-/// Button hiển thị preview phim mô phỏng
 struct FilmPresetButton: View {
     let type: FilmPresetType
     let isSelected: Bool
@@ -1374,12 +1191,10 @@ struct FilmPresetButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                // Film icon with accent color
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(type.accentColor.opacity(0.2))
                         .frame(width: 70, height: 70)
-
                     Image(systemName: type.iconName)
                         .font(.title2)
                         .foregroundColor(type.accentColor)
@@ -1388,8 +1203,6 @@ struct FilmPresetButton: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(isSelected ? type.accentColor : Color.clear, lineWidth: 2)
                 )
-
-                // Film name
                 Text(type.rawValue)
                     .font(.caption2)
                     .foregroundColor(.white)
