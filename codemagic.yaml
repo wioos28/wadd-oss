@@ -5,18 +5,9 @@ workflows:
   ios-release:
     name: iOS Release Build
     max_build_duration: 60
-    environment:
-      ios_signing:
-        distribution: app_store
-        bundle_identifier: com.procamera.app
     scripts:
-      - name: Install dependencies
-        script: |
-          cd ios
-          pod install --repo-update || echo "No CocoaPods, skipping"
       - name: Build iOS
         script: |
-          cd ios
           xcodebuild \
             -project ProCameraApp.xcodeproj \
             -scheme ProCameraApp \
@@ -26,26 +17,21 @@ workflows:
             archive
       - name: Export IPA
         script: |
-          cd ios
           xcodebuild \
             -exportArchive \
             -archivePath $CM_BUILD_DIR/build/ProCameraApp.xcarchive \
             -exportOptionsPlist ExportOptions.plist \
             -exportPath $CM_BUILD_DIR/output
     artifacts:
-      - build/ios/output/*.ipa
+      - build/ProCameraApp.xcarchive
+      - output/*.ipa
 
   ios-debug:
     name: iOS Debug Build
     max_build_duration: 30
-    environment:
-      ios_signing:
-        distribution: development
-        bundle_identifier: com.procamera.app
     scripts:
       - name: Build iOS Debug
         script: |
-          cd ios
           xcodebuild \
             -project ProCameraApp.xcodeproj \
             -scheme ProCameraApp \
@@ -54,19 +40,14 @@ workflows:
             -destination 'platform=iOS Simulator,name=iPhone 15' \
             build
     artifacts:
-      - build/ios/iphonesimulator/Debug-iphonesimulator/*.app
+      - build/Debug-iphonesimulator/*.app
 
   ios-test:
     name: iOS Tests
     max_build_duration: 45
-    environment:
-      ios_signing:
-        distribution: development
-        bundle_identifier: com.procamera.app
     scripts:
       - name: Run Unit Tests
         script: |
-          cd ios
           xcodebuild \
             -project ProCameraApp.xcodeproj \
             -scheme ProCameraApp \
@@ -75,7 +56,7 @@ workflows:
             -destination 'platform=iOS Simulator,name=iPhone 15' \
             test
     artifacts:
-      - build/ios/logs/*.xcresult
+      - build/logs/*.xcresult
 
 trigger:
   events:
@@ -99,4 +80,3 @@ cache:
   cache_paths:
     - ~/Library/Caches/CocoaPods
     - ~/Library/Caches/com.apple.dt.Xcode
-    - ios/Pods
