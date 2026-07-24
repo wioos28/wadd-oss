@@ -44,6 +44,7 @@ class FocusPeakingManager: ObservableObject {
     private var edgesFilter: CIFilter?
     private var colorControlsFilter: CIFilter?
     private var falseColorFilter: CIFilter?
+    private var thresholdFilter: CIFilter?
 
     /// Frame counter để skip frames
     private var frameCounter: Int = 0
@@ -112,6 +113,9 @@ class FocusPeakingManager: ObservableObject {
 
         // CIFalseColor: Apply custom color to edges
         falseColorFilter = CIFilter(name: "CIFalseColor")
+
+        // CIColorControls for threshold
+        thresholdFilter = CIFilter(name: "CIColorControls")
     }
 
     // MARK: - Control Methods
@@ -240,7 +244,7 @@ class FocusPeakingManager: ObservableObject {
 
     /// Áp dụng false color (màu tùy chỉnh) cho edges
     private func applyFalseColor(to image: CIImage) -> CIImage? {
-        guard let falseColor = CIFilter(name: "CIFalseColor") else { return nil }
+        guard let falseColor = falseColorFilter else { return nil }
 
         falseColor.setValue(image, forKey: kCIInputImageKey)
         falseColor.setValue(highlightColor.falseColorVector, forKey: "inputColor0")
@@ -251,13 +255,13 @@ class FocusPeakingManager: ObservableObject {
 
     /// Threshold để loại bỏ noise
     private func applyThreshold(to image: CIImage) -> CIImage? {
-        guard let colorControls = CIFilter(name: "CIColorControls") else { return nil }
+        guard let thresholdFilter = thresholdFilter else { return nil }
 
-        colorControls.setValue(image, forKey: kCIInputImageKey)
-        colorControls.setValue(threshold * 5.0, forKey: kCIInputBrightnessKey)
-        colorControls.setValue(3.0, forKey: kCIInputContrastKey)
+        thresholdFilter.setValue(image, forKey: kCIInputImageKey)
+        thresholdFilter.setValue(threshold * 5.0, forKey: kCIInputBrightnessKey)
+        thresholdFilter.setValue(3.0, forKey: kCIInputContrastKey)
 
-        return colorControls.outputImage
+        return thresholdFilter.outputImage
     }
 }
 

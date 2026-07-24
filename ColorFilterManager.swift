@@ -354,6 +354,7 @@ class ColorFilterManager: ObservableObject {
     func removeFilter() {
         currentLUT = nil
         filterIntensity = 1.0
+        processedPreview = nil // Clear stale overlay
     }
 
     /// Reset all adjustments
@@ -361,6 +362,7 @@ class ColorFilterManager: ObservableObject {
         colorAdjustments = ColorAdjustments()
         currentLUT = nil
         filterIntensity = 1.0
+        processedPreview = nil // Clear stale overlay
     }
 
     // MARK: - Performance

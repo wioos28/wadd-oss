@@ -104,7 +104,8 @@ class CameraManager: NSObject, ObservableObject {
     }
 
     deinit {
-        stopSession()
+        // Stop session synchronously - [weak self] in stopSession() would be nil in deinit
+        captureSession?.stopRunning()
     }
 
     // MARK: - Setup
@@ -771,25 +772,26 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
             return
         }
 
-        // Process histogram data on main thread
-        Task { @MainActor in
-            if let histogramManager = self.histogramManager, histogramManager.isAnalyzing {
-                histogramManager.processSampleBuffer(sampleBuffer)
-            }
-        }
+        // Retain the pixel buffer to prevent recycling before async Task executes
+        CVPixelBufferRetain(pixelBuffer)
+        defer { CVPixelBufferRelease(pixelBuffer) }
 
-        // Process focus peaking on main thread
+        // Process all camera data in a single MainActor Task to avoid interleaving
         Task { @MainActor in
-            if let focusPeakingManager = self.focusPeakingManager, focusPeakingManager.isEnabled {
-                focusPeakingManager.processSampleBuffer(sampleBuffer)
-            }
-        }
-
-        // Update current frame on main thread
-        Task { @MainActor in
+            // Update current frame
             self.currentFrame = pixelBuffer
 
-            // Apply color filters if available
+            // Process histogram data
+            if let histogramManager = self.histogramManager, histogramManager.isAnalyzing {
+                histogramManager.processPixelBuffer(pixelBuffer)
+            }
+
+            // Process focus peaking
+            if let focusPeakingManager = self.focusPeakingManager, focusPeakingManager.isEnabled {
+                focusPeakingManager.processPixelBuffer(pixelBuffer)
+            }
+
+            // Apply color filters
             if let colorFilterManager = self.colorFilterManager {
                 colorFilterManager.processFrame(pixelBuffer)
             }

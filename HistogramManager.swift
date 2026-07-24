@@ -144,13 +144,13 @@ class HistogramManager: ObservableObject {
     private func computeLuminanceHistogram(from image: CIImage) -> [Float]? {
         guard let context = ciContext else { return nil }
 
-        // Method: Use vImage histogram directly for better performance
-        // But for simplicity, we'll use a pixel-by-pixel approach with CIImage
-
         // Get image dimensions
         let extent = image.extent
         let width = Int(extent.width)
         let height = Int(extent.height)
+
+        // Guard against zero dimensions
+        guard width > 0, height > 0 else { return nil }
 
         // Downsample for performance (process at lower resolution)
         let sampleWidth = min(width, 320)
@@ -195,8 +195,7 @@ class HistogramManager: ObservableObject {
         }
 
         // Normalize histogram
-        let totalPixels = Float(sampleWidth * sampleHeight)
-        let maxValue = histogram.max() ?? 1.0
+        let maxValue = max(histogram.max() ?? 0, 1.0) // Avoid division by zero
 
         // Normalize to 0-1 range
         return histogram.map { $0 / maxValue }
@@ -215,6 +214,15 @@ class HistogramManager: ObservableObject {
         let extent = image.extent
         let width = Int(extent.width)
         let height = Int(extent.height)
+
+        // Guard against zero dimensions
+        guard width > 0, height > 0 else {
+            return (
+                Array(repeating: 0, count: binCount),
+                Array(repeating: 0, count: binCount),
+                Array(repeating: 0, count: binCount)
+            )
+        }
 
         let sampleWidth = min(width, 320)
         let sampleHeight = min(height, 240)
@@ -251,8 +259,8 @@ class HistogramManager: ObservableObject {
             }
         }
 
-        // Normalize
-        let maxValue = max(redHistogram.max() ?? 1.0, greenHistogram.max() ?? 1.0, blueHistogram.max() ?? 1.0)
+        // Normalize (avoid division by zero)
+        let maxValue = max(redHistogram.max() ?? 0, greenHistogram.max() ?? 0, blueHistogram.max() ?? 0, 1.0)
 
         return (
             redHistogram.map { $0 / maxValue },

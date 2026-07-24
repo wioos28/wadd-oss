@@ -134,7 +134,9 @@ struct CameraSettings {
 
     /// Tính thời gian phơi sáng hiển thị
     var shutterSpeedDisplay: String {
-        if shutterSpeed >= 1.0 {
+        if shutterSpeed <= 0 {
+            return "1/∞s"
+        } else if shutterSpeed >= 1.0 {
             return String(format: "%.1fs", shutterSpeed)
         } else {
             let denominator = Int(1.0 / shutterSpeed)
