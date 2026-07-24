@@ -19,9 +19,17 @@ workflows:
           cd "$PROJECT_DIR"
 
           # Thực hiện lệnh build/archive
-          xcodebuild -project ProCameraApp.xcodeproj -scheme ProCameraApp -configuration Release -sdk iphoneos -archivePath $HOME/clone/build/ProCameraApp.xcarchive archive
+          xcodebuild -project ProCameraApp.xcodeproj -scheme ProCameraApp -configuration Release -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -archivePath $HOME/clone/build/ProCameraApp.xcarchive archive
+
+      - name: Export IPA
+        script: |
+          xcodebuild -exportArchive \
+            -archivePath $HOME/clone/build/ProCameraApp.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath $HOME/clone/build/ipa
     artifacts:
       - $HOME/clone/build/ProCameraApp.xcarchive
+      - $HOME/clone/build/ipa/*.ipa
 
 trigger:
   events:

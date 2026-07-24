@@ -3,16 +3,18 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>app-store</string>
-
+	<string>development</string>
+	<key>destination</key>
+	<string>export</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>compileBitcode</key>
+	<false/>
 	<key>uploadBitcode</key>
 	<false/>
 	<key>uploadSymbols</key>
 	<true/>
-	<key>compileBitcode</key>
-	<false/>
-	<key>destination</key>
-	<string>export</string>
-
+	<key>thinning</key>
+	<string>&lt;none&gt;</string>
 </dict>
 </plist>
