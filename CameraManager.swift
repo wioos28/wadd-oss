@@ -93,6 +93,9 @@ class CameraManager: NSObject, ObservableObject {
     /// Reference to focus peaking manager
     var focusPeakingManager: FocusPeakingManager?
 
+    /// Reference to film simulation manager
+    var filmSimulationManager: FilmSimulationManager?
+
     /// Active format (ProRAW, RAW, JPEG, PNG)
     private var activePhotoFormat: AVCapturePhotoFormat?
 
@@ -789,6 +792,12 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
             // Process focus peaking
             if let focusPeakingManager = self.focusPeakingManager, focusPeakingManager.isEnabled {
                 focusPeakingManager.processPixelBuffer(pixelBuffer)
+            }
+
+            // Apply film simulation
+            if let filmSimulationManager = self.filmSimulationManager,
+               filmSimulationManager.currentFilm != .original {
+                filmSimulationManager.processFrame(pixelBuffer)
             }
 
             // Apply color filters

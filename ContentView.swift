@@ -17,9 +17,11 @@ struct ContentView: View {
     @StateObject private var motionManager = MotionManager()
     @StateObject private var histogramManager = HistogramManager()
     @StateObject private var focusPeakingManager = FocusPeakingManager()
+    @StateObject private var filmSimulationManager = FilmSimulationManager()
 
     @State private var showingControls = true
     @State private var showingFilterPanel = false
+    @State private var showingFilmPanel = false
     @State private var showingSettings = false
     @State private var showingProTools = false
     @State private var showError = false
@@ -41,6 +43,14 @@ struct ContentView: View {
 
             // MARK: - Focus Peaking Overlay
             FocusPeakingOverlay(focusPeakingManager: focusPeakingManager)
+
+            // MARK: - Film Simulation Overlay
+            if let processedPreview = filmSimulationManager.processedPreview {
+                Image(decorative: processedPreview, scale: 1)
+                    .resizable()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
 
             // MARK: - Color Filter Overlay
             if let processedPreview = colorFilterManager.processedPreview {
@@ -119,6 +129,18 @@ struct ContentView: View {
                 }
             }
 
+            // MARK: - Film Simulation Panel (Slide up from bottom)
+            if showingFilmPanel {
+                VStack {
+                    Spacer()
+                    FilmSimulationPanelView(
+                        filmSimulationManager: filmSimulationManager,
+                        showingFilmPanel: $showingFilmPanel
+                    )
+                    .transition(.move(edge: .bottom))
+                }
+            }
+
             // MARK: - Pro Tools Panel
             if showingProTools {
                 VStack {
@@ -181,6 +203,7 @@ struct ContentView: View {
             cameraManager.colorFilterManager = colorFilterManager
             cameraManager.histogramManager = histogramManager
             cameraManager.focusPeakingManager = focusPeakingManager
+            cameraManager.filmSimulationManager = filmSimulationManager
             cameraManager.startSession()
         }
     }
@@ -238,6 +261,16 @@ struct TopBarView: View {
                 Image(systemName: "slider.horizontal.3")
                     .font(.title2)
                     .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.5), radius: 2)
+            }
+
+            // Film Simulation button
+            Button(action: {
+                showingFilmPanel.toggle()
+            }) {
+                Image(systemName: "film")
+                    .font(.title2)
+                    .foregroundColor(filmSimulationManager.currentFilm == .original ? .white : filmSimulationManager.currentFilm.accentColor)
                     .shadow(color: .black.opacity(0.5), radius: 2)
             }
 
@@ -1153,6 +1186,130 @@ struct ProToolsPanelView: View {
         .padding(.vertical, 16)
         .background(Color.black.opacity(0.85))
         .cornerRadius(20)
+    }
+}
+
+// MARK: - FilmSimulationPanelView
+/// Panel chọn và điều chỉnh mô phỏng phim
+struct FilmSimulationPanelView: View {
+    @ObservedObject var filmSimulationManager: FilmSimulationManager
+    @Binding var showingFilmPanel: Bool
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Header
+            HStack {
+                Text("Film Simulation")
+                    .font(.headline)
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                Button(action: {
+                    showingFilmPanel = false
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.white)
+                }
+            }
+            .padding(.horizontal, 16)
+
+            // Film presets horizontal scroll
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(FilmPresetType.allCases) { filmType in
+                        FilmPresetButton(
+                            type: filmType,
+                            isSelected: filmSimulationManager.currentFilm == filmType,
+                            action: {
+                                withAnimation(.spring(response: 0.3)) {
+                                    filmSimulationManager.selectFilm(filmType)
+                                }
+                            }
+                        )
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+
+            // Film description
+            if filmSimulationManager.currentFilm != .original {
+                Text(filmSimulationManager.currentFilm.description)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 16)
+                    .multilineTextAlignment(.center)
+            }
+
+            // Intensity slider
+            HStack {
+                Text("Intensity")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+
+                Slider(value: $filmSimulationManager.intensity, in: 0...1.0)
+                    .tint(filmSimulationManager.currentFilm.accentColor)
+
+                Text(String(format: "%.0f%%", filmSimulationManager.intensity * 100))
+                    .font(.caption)
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, 16)
+
+            // Reset button
+            Button(action: {
+                withAnimation {
+                    filmSimulationManager.reset()
+                }
+            }) {
+                Text("Reset")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+        }
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .environment(\.colorScheme, .dark)
+        )
+    }
+}
+
+// MARK: - FilmPresetButton
+/// Button hiển thị preview phim mô phỏng
+struct FilmPresetButton: View {
+    let type: FilmPresetType
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                // Film icon with accent color
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(type.accentColor.opacity(0.2))
+                        .frame(width: 70, height: 70)
+
+                    Image(systemName: type.iconName)
+                        .font(.title2)
+                        .foregroundColor(type.accentColor)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(isSelected ? type.accentColor : Color.clear, lineWidth: 2)
+                )
+
+                // Film name
+                Text(type.rawValue)
+                    .font(.caption2)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
