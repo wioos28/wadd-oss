@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Technology Overview</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; }
+        .section { margin: 20px 0; padding: 15px; border-left: 4px solid #007bff; background: #f8f9fa; }
+        code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Artificial Intelligence Technology Overview</h1>
+    
+    <div class="section">
+        <h2>Machine Learning</h2>
+        <p>Machine Learning is a subset of AI that enables systems to learn and improve from experience without being explicitly programmed.</p>
+        <h3>Types of ML:</h3>
+        <ul>
+            <li><strong>Supervised Learning</strong>: Training with labeled data (e.g., classification, regression)</li>
+            <li><strong>Unsupervised Learning</strong>: Finding patterns in unlabeled data (e.g., clustering, dimensionality reduction)</li>
+            <li><strong>Reinforcement Learning</strong>: Learning through trial and error with rewards</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>Deep Learning</h2>
+        <p>Deep Learning is a subset of ML that uses neural networks with multiple layers to learn representations of data.</p>
+        <h3>Popular Architectures:</h3>
+        <ul>
+            <li><strong>CNN (Convolutional Neural Networks)</strong>: Image recognition, computer vision</li>
+            <li><strong>RNN (Recurrent Neural Networks)</strong>: Sequential data, time series</li>
+            <li><strong>Transformer</strong>: NLP, large language models (GPT, BERT)</li>
+        </ul>
+        <pre>
+import torch
+import torch.nn as nn
+
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(16 * 16 * 16, 10)
+    
+    def forward(self, x):
+        x = self.pool(self.relu(self.conv1(x)))
+        x = x.view(-1, 16 * 16 * 16)
+        x = self.fc1(x)
+        return x
+        </pre>
+    </div>
+    
+    <div class="section">
+        <h2>Natural Language Processing (NLP)</h2>
+        <p>NLP enables computers to understand, interpret, and generate human language.</p>
+        <h3>Key Applications:</h3>
+        <ul>
+            <li>Machine Translation (Google Translate)</li>
+            <li>Sentiment Analysis</li>
+            <li>Text Summarization</li>
+            <li>Chatbots and Virtual Assistants</li>
+            <li>Large Language Models (GPT-4, Claude, Gemini)</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>Computer Vision</h2>
+        <p>Computer Vision enables machines to interpret and understand visual information from the world.</p>
+        <h3>Applications:</h3>
+        <ul>
+            <li>Image Classification</li>
+            <li>Object Detection (YOLO, R-CNN)</li>
+            <li>Facial Recognition</li>
+            <li>Autonomous Vehicles</li>
+            <li>Medical Imaging</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>AI Tools and Frameworks</h2>
+        <table border="1" cellpadding="8" cellspacing="0">
+            <tr>
+                <th>Framework</th>
+                <th>Use Case</th>
+                <th>Company</th>
+            </tr>
+            <tr>
+                <td>TensorFlow</td>
+                <td>Deep Learning</td>
+                <td>Google</td>
+            </tr>
+            <tr>
+                <td>PyTorch</td>
+                <td>Deep Learning</td>
+                <td>Meta</td>
+            </tr>
+            <tr>
+                <td>scikit-learn</td>
+                <td>Machine Learning</td>
+                <td>Open Source</td>
+            </tr>
+            <tr>
+                <td>Hugging Face</td>
+                <td>NLP / Transformers</td>
+                <td>Open Source</td>
+            </tr>
+            <tr>
+                <td>OpenCV</td>
+                <td>Computer Vision</td>
+                <td>Open Source</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

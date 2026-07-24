@@ -1,0 +1,80 @@
+Git Version Control - Quick Reference
+
+=== Basic Commands ===
+
+git init                  - Initialize a new repository
+git clone <url>           - Clone a remote repository
+git add <file>            - Stage changes
+git add .                 - Stage all changes
+git commit -m "message"   - Commit staged changes
+git status                - Show working tree status
+git diff                  - Show changes between commits
+
+=== Branching ===
+
+git branch                - List branches
+git branch <name>         - Create new branch
+git checkout <branch>     - Switch to branch
+git checkout -b <branch>  - Create and switch to branch
+git merge <branch>        - Merge branch into current
+git branch -d <branch>    - Delete branch
+
+=== Remote Operations ===
+
+git remote -v             - List remote repositories
+git remote add <name> <url>  - Add remote
+git push origin <branch>  - Push to remote
+git pull origin <branch>  - Pull from remote
+git fetch                 - Fetch remote changes
+
+=== Undoing Changes ===
+
+git reset HEAD <file>     - Unstage file
+git checkout -- <file>    - Discard changes
+git revert <commit>       - Create new commit that undoes changes
+git reset --soft HEAD~1   - Undo last commit, keep changes
+git reset --hard HEAD~1   - Undo last commit, discard changes
+
+=== Log and History ===
+
+git log                   - Show commit history
+git log --oneline         - Compact log
+git log --graph           - Graphical log
+git log --author="name"   - Filter by author
+git show <commit>         - Show commit details
+
+=== Stashing ===
+
+git stash                 - Stash changes
+git stash list            - List stashes
+git stash pop             - Apply and remove stash
+git stash drop            - Delete stash
+
+=== Tags ===
+
+git tag <name>            - Create lightweight tag
+git tag -a <name> -m ""   - Create annotated tag
+git push --tags           - Push all tags
+
+=== Advanced ===
+
+git rebase <branch>       - Rebase current branch
+git cherry-pick <commit>  - Apply specific commit
+git bisect start          - Start binary search for bugs
+git blame <file>          - Show who changed what
+
+=== .gitignore Patterns ===
+
+*.log                     - Ignore all .log files
+build/                    - Ignore build directory
+.env                      - Ignore environment file
+*.pyc                     - Ignore Python bytecode
+node_modules/             - Ignore node modules
+
+=== Best Practices ===
+
+1. Commit often, push regularly
+2. Write meaningful commit messages
+3. Use feature branches
+4. Pull before push
+5. Review code before merging

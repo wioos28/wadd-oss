@@ -1,0 +1,55 @@
+{
+  "project": {
+    "name": "Knowledge Engine",
+    "version": "0.1.0",
+    "description": "A local-first, offline-capable knowledge management CLI",
+    "license": "MIT",
+    "author": "Knowledge Engine Contributors"
+  },
+  "dependencies": {
+    "typer": "^0.12.0",
+    "rich": "^13.0",
+    "pydantic": "^2.0",
+    "chromadb": "^0.5.0",
+    "sentence-transformers": "^3.0",
+    "pymupdf": "^1.24.0",
+    "python-docx": "^1.1.0",
+    "beautifulsoup4": "^4.12.0"
+  },
+  "features": {
+    "multi_format_ingestion": {
+      "supported_formats": ["PDF", "DOCX", "Markdown", "HTML", "JSON", "CSV"],
+      "description": "Ingest content from various file formats"
+    },
+    "semantic_search": {
+      "method": "vector embeddings",
+      "model": "all-MiniLM-L6-v2",
+      "description": "Search by meaning using vector similarity"
+    },
+    "hybrid_search": {
+      "method": "reciprocal rank fusion",
+      "description": "Combine semantic and keyword search"
+    },
+    "knowledge_graph": {
+      "description": "Auto-link related entries via relationships"
+    }
+  },
+  "architecture": {
+    "cli": "Typer",
+    "storage": {
+      "metadata": "SQLite",
+      "vectors": "ChromaDB",
+      "cache": "local filesystem"
+    },
+    "embeddings": "sentence-transformers"
+  },
+  "commands": [
+    {"name": "init", "description": "Initialize the knowledge base"},
+    {"name": "ingest", "description": "Ingest files into the knowledge base"},
+    {"name": "query", "description": "Search the knowledge base"},
+    {"name": "list", "description": "List knowledge entries"},
+    {"name": "show", "description": "Show entry details"},
+    {"name": "learn", "description": "Learn from a completed task"},
+    {"name": "status", "description": "Show system status"}
+  ]
+}

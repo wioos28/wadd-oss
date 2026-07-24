@@ -1,0 +1,23 @@
+{
+  "name": "sample-config",
+  "version": "1.0.0",
+  "description": "Sample configuration file for testing",
+  "settings": {
+    "debug": false,
+    "max_retries": 3,
+    "timeout_seconds": 30,
+    "allowed_hosts": ["localhost", "127.0.0.1"]
+  },
+  "features": [
+    "authentication",
+    "logging",
+    "caching",
+    "rate_limiting"
+  ],
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "myapp",
+    "pool_size": 10
+  }
+}

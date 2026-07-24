@@ -1,0 +1,39 @@
+[engine]
+version = "0.1.0"
+data_dir = "~/.knowledge-engine"
+
+[embeddings]
+model_name = "all-MiniLM-L6-v2"
+device = "cpu"
+batch_size = 32
+
+[storage]
+vector_db_path = "~/.knowledge-engine/vectors"
+metadata_db_path = "~/.knowledge-engine/metadata.db"
+cache_path = "~/.knowledge-engine/cache"
+
+[chunking]
+strategy = "fixed"
+chunk_size = 512
+chunk_overlap = 64
+
+[retrieval]
+default_mode = "hybrid"
+max_results = 10
+min_score = 0.3
+enable_relationships = true
+
+[query]
+layers = ["cache", "metadata", "vector", "cloud", "internet"]
+cloud_enabled = false
+internet_enabled = false
+internet_requires_permission = true
+
+[sync]
+provider = "local"
+remote_url = ""
+
+[network]
+check_interval = 30
+probes = ["dns", "http"]
+quality_threshold_latency_ms = 500.0

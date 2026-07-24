@@ -1,0 +1,6 @@
+name,email,role,score
+Alice Johnson,alice@example.com,admin,95.5
+Bob Smith,bob@example.com,user,87.3
+Charlie Brown,charlie@example.com,user,92.1
+Diana Prince,diana@example.com,moderator,88.9
+Eve Davis,eve@example.com,user,91.0

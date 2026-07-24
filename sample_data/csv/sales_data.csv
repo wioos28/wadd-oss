@@ -1,0 +1,26 @@
+date,product,category,quantity,price,total,region,customer_type
+2024-01-15,Laptop,Electronics,2,1200.00,2400.00,North America,Business
+2024-01-16,Phone,Electronics,5,800.00,4000.00,Europe,Consumer
+2024-01-17,Tablet,Electronics,3,500.00,1500.00,Asia Pacific,Consumer
+2024-01-18,Monitor,Electronics,1,400.00,400.00,North America,Business
+2024-01-19,Keyboard,Accessories,10,75.00,750.00,Europe,Business
+2024-01-20,Mouse,Accessories,15,30.00,450.00,Asia Pacific,Consumer
+2024-01-21,Headphones,Audio,8,150.00,1200.00,North America,Consumer
+2024-01-22,Speaker,Audio,4,200.00,800.00,Europe,Business
+2024-01-23,Webcam,Electronics,6,100.00,600.00,Asia Pacific,Consumer
+2024-01-24,USB Hub,Accessories,20,40.00,800.00,North America,Business
+2024-01-25,Laptop Stand,Accessories,12,80.00,960.00,Europe,Consumer
+2024-01-26,Cable,Accessories,50,15.00,750.00,Asia Pacific,Consumer
+2024-01-27,Power Bank,Accessories,25,60.00,1500.00,North America,Consumer
+2024-01-28,Screen Protector,Accessories,30,20.00,600.00,Europe,Consumer
+2024-01-29,Phone Case,Accessories,40,25.00,1000.00,Asia Pacific,Consumer
+2024-01-30,Laptop,Electronics,3,1200.00,3600.00,North America,Business
+2024-01-31,Phone,Electronics,7,800.00,5600.00,Europe,Consumer
+2024-02-01,Tablet,Electronics,2,500.00,1000.00,Asia Pacific,Business
+2024-02-02,Monitor,Electronics,2,400.00,800.00,North America,Consumer
+2024-02-03,Keyboard,Accessories,8,75.00,600.00,Europe,Consumer
+2024-02-04,Mouse,Accessories,12,30.00,360.00,Asia Pacific,Business
+2024-02-05,Headphones,Audio,5,150.00,750.00,North America,Business
+2024-02-06,Speaker,Audio,3,200.00,600.00,Europe,Consumer
+2024-02-07,Webcam,Electronics,4,100.00,400.00,Asia Pacific,Business
+2024-02-08,USB Hub,Accessories,15,40.00,600.00,North America,Consumer
