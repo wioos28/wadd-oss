@@ -60,7 +60,7 @@ class MotionManager: ObservableObject {
     }
 
     deinit {
-        stopUpdates()
+        motionManager.stopDeviceMotionUpdates()
     }
 
     // MARK: - Control

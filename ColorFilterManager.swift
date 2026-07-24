@@ -227,10 +227,11 @@ class ColorFilterManager: ObservableObject {
 
     /// Apply 3D LUT using CIColorCube
     private func applyLUT(to image: CIImage, lut: FilterPreset) -> CIImage {
-        guard let cubeData = lut.cubeData else { return image }
+        // Check if cubeData is empty (for presets without LUT data)
+        guard !lut.cubeData.isEmpty else { return image }
 
         let size = lut.cubeSize
-        let data = Data(bytes: cubeData, count: size * size * size * 4 * MemoryLayout<Float>.size)
+        let data = Data(bytes: lut.cubeData, count: size * size * size * 4 * MemoryLayout<Float>.size)
 
         guard let filter = CIFilter(name: "CIColorCube") else { return image }
 

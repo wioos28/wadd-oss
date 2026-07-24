@@ -168,12 +168,24 @@ struct CameraSettings {
 
 // MARK: - Camera State
 /// Trạng thái hiện tại của camera
-enum CameraState {
+enum CameraState: Equatable {
     case idle
     case configuring
     case running
     case capturing
     case error(String)
+
+    static func == (lhs: CameraState, rhs: CameraState) -> Bool {
+        switch (lhs, rhs) {
+        case (.idle, .idle), (.configuring, .configuring),
+             (.running, .running), (.capturing, .capturing):
+            return true
+        case (.error(let a), .error(let b)):
+            return a == b
+        default:
+            return false
+        }
+    }
 }
 
 // MARK: - Camera Position

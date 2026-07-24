@@ -96,9 +96,6 @@ class CameraManager: NSObject, ObservableObject {
     /// Reference to film simulation manager
     var filmSimulationManager: FilmSimulationManager?
 
-    /// Active format (ProRAW, RAW, JPEG, PNG)
-    private var activePhotoFormat: AVCapturePhotoFormat?
-
     // MARK: - Initialization
 
     override init() {
@@ -264,21 +261,21 @@ class CameraManager: NSObject, ObservableObject {
     /// Cấu hình các codec ảnh được hỗ trợ
     private func configurePhotoCodecs(photoOutput: AVCapturePhotoOutput) {
         // Kiểm tra ProRAW support (iPhone 12 Pro trở lên)
-        if photoOutput.supportedPhotoCodecTypes.contains(.hevc) {
-            print("✓ HEVC codec supported")
+        if photoOutput.availablePhotoCodecTypes.contains(.hevc) {
+            print("HEVC codec supported")
         }
 
-        if photoOutput.supportedPhotoCodecTypes.contains(.jpeg) {
-            print("✓ JPEG codec supported")
+        if photoOutput.availablePhotoCodecTypes.contains(.jpeg) {
+            print("JPEG codec supported")
         }
 
-        if photoOutput.supportedPhotoCodecTypes.contains(.png) {
-            print("✓ PNG codec supported")
+        if photoOutput.availablePhotoCodecTypes.contains(.png) {
+            print("PNG codec supported")
         }
 
         // ProRAW/DNG support
-        if photoOutput.supportedPhotoCodecTypes.contains(.dng) {
-            print("✓ DNG (RAW) codec supported")
+        if photoOutput.availableRawPhotoPixelFormatTypes.count > 0 {
+            print("DNG (RAW) codec supported")
         }
     }
 
@@ -305,8 +302,14 @@ class CameraManager: NSObject, ObservableObject {
 
             // Set connection video orientation
             if let connection = videoOutput.connection(with: .video) {
-                if connection.isVideoRotationAngleSupported(90) {
-                    connection.videoRotationAngle = 90 // Portrait
+                if #available(iOS 17.0, *) {
+                    if connection.isVideoRotationAngleSupported(90) {
+                        connection.videoRotationAngle = 90 // Portrait
+                    }
+                } else {
+                    if connection.isVideoOrientationSupported {
+                        connection.videoOrientation = .portrait
+                    }
                 }
                 if connection.isVideoMirroringSupported {
                     connection.isVideoMirrored = false
@@ -381,8 +384,8 @@ class CameraManager: NSObject, ObservableObject {
         do {
             try device.lockForConfiguration()
 
-            let clampedEV = max(device.activeFormat.minExposureTargetBias,
-                                min(ev, device.activeFormat.maxExposureTargetBias))
+            let clampedEV = max(device.minExposureTargetBias,
+                                min(ev, device.maxExposureTargetBias))
 
             device.setExposureTargetBias(clampedEV, completionHandler: nil)
 
@@ -725,11 +728,12 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
                 // Tạo asset request
                 let request = PHAssetCreationRequest.forAsset()
 
-                // Set UTType trước khi thêm resource
-                request.uniformTypeIdentifier = self?.getUTType()
+                // Tạo resource options với uniform type identifier
+                let resourceOptions = PHAssetResourceCreationOptions()
+                resourceOptions.uniformTypeIdentifier = self?.getUTType()
 
-                // Thêm photo data (CHỈ MỘT LẦN)
-                request.addResource(with: .photo, data: photoData, options: nil)
+                // Thêm photo data với options
+                request.addResource(with: .photo, data: photoData, options: resourceOptions)
 
             }) { [weak self] success, error in
                 DispatchQueue.main.async {
@@ -775,10 +779,6 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
             return
         }
 
-        // Retain the pixel buffer to prevent recycling before async Task executes
-        CVPixelBufferRetain(pixelBuffer)
-        defer { CVPixelBufferRelease(pixelBuffer) }
-
         // Process all camera data in a single MainActor Task to avoid interleaving
         Task { @MainActor in
             // Update current frame
@@ -791,7 +791,7 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
 
             // Process focus peaking
             if let focusPeakingManager = self.focusPeakingManager, focusPeakingManager.isEnabled {
-                focusPeakingManager.processPixelBuffer(pixelBuffer)
+                await focusPeakingManager.processPixelBuffer(pixelBuffer)
             }
 
             // Apply film simulation

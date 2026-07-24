@@ -66,9 +66,16 @@ class CameraPreviewUIView: UIView {
 
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill
-        if let connection = previewLayer.connection,
-           connection.isVideoRotationAngleSupported(90) {
-            connection.videoRotationAngle = 90 // Portrait
+        if let connection = previewLayer.connection {
+            if #available(iOS 17.0, *) {
+                if connection.isVideoRotationAngleSupported(90) {
+                    connection.videoRotationAngle = 90 // Portrait
+                }
+            } else {
+                if connection.isVideoOrientationSupported {
+                    connection.videoOrientation = .portrait
+                }
+            }
         }
         previewLayer.frame = bounds
 
@@ -78,9 +85,16 @@ class CameraPreviewUIView: UIView {
 
     /// Update video rotation angle
     func updateVideoRotationAngle(_ angle: CGFloat) {
-        if let connection = previewLayer?.connection,
-           connection.isVideoRotationAngleSupported(angle) {
-            connection.videoRotationAngle = angle
+        if let connection = previewLayer?.connection {
+            if #available(iOS 17.0, *) {
+                if connection.isVideoRotationAngleSupported(angle) {
+                    connection.videoRotationAngle = angle
+                }
+            } else {
+                if connection.isVideoOrientationSupported {
+                    connection.videoOrientation = .portrait
+                }
+            }
         }
     }
 }
