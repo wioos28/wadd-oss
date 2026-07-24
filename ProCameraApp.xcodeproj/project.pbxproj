@@ -7,37 +7,37 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000001 /* ProCameraAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002 /* ProCameraAppApp.swift */; };
-		A1000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004 /* ContentView.swift */; };
-		A1000005 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006 /* CameraManager.swift */; };
-		A1000007 /* ColorFilterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008 /* ColorFilterManager.swift */; };
-		A1000009 /* CameraSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A /* CameraSettings.swift */; };
-		A100000B /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C /* CameraPreviewView.swift */; };
-		A100000D /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000E /* MotionManager.swift */; };
-		A100000F /* HistogramManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010 /* HistogramManager.swift */; };
-		A1000011 /* FocusPeakingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012 /* FocusPeakingManager.swift */; };
-		A1000013 /* FilmPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000015 /* FilmPreset.swift */; };
-		A1000017 /* WatermarkEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000018 /* WatermarkEngine.swift */; };
+		AA000001 /* ProCameraAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002 /* ProCameraAppApp.swift */; };
+		AA000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000004 /* ContentView.swift */; };
+		AA000005 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000006 /* CameraManager.swift */; };
+		AA000007 /* ColorFilterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000008 /* ColorFilterManager.swift */; };
+		AA000009 /* CameraSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000A /* CameraSettings.swift */; };
+		AA00000B /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000C /* CameraPreviewView.swift */; };
+		AA00000D /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000E /* MotionManager.swift */; };
+		AA00000F /* HistogramManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010 /* HistogramManager.swift */; };
+		AA000011 /* FocusPeakingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000012 /* FocusPeakingManager.swift */; };
+		AA000013 /* FilmPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000014 /* FilmPreset.swift */; };
+		AA000015 /* WatermarkEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000016 /* WatermarkEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A1000002 /* ProCameraAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProCameraAppApp.swift; sourceTree = "<group>"; };
-		A1000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		A1000006 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
-		A1000008 /* ColorFilterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorFilterManager.swift; sourceTree = "<group>"; };
-		A100000A /* CameraSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraSettings.swift; path = Models/CameraSettings.swift; sourceTree = "<group>"; };
-		A100000C /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraPreviewView.swift; path = Views/CameraPreviewView.swift; sourceTree = "<group>"; };
-		A100000E /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
-		A1000010 /* HistogramManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistogramManager.swift; sourceTree = "<group>"; };
-		A1000012 /* FocusPeakingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusPeakingManager.swift; sourceTree = "<group>"; };
-		A1000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A1000015 /* FilmPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FilmPreset.swift; path = Models/FilmPreset.swift; sourceTree = "<group>"; };
-		A1000016 /* ProCameraApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProCameraApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1000018 /* WatermarkEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatermarkEngine.swift; sourceTree = "<group>"; };
+		AA000002 /* ProCameraAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProCameraAppApp.swift; sourceTree = "<group>"; };
+		AA000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA000006 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		AA000008 /* ColorFilterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorFilterManager.swift; sourceTree = "<group>"; };
+		AA00000A /* CameraSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraSettings.swift; path = Models/CameraSettings.swift; sourceTree = "<group>"; };
+		AA00000C /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraPreviewView.swift; path = Views/CameraPreviewView.swift; sourceTree = "<group>"; };
+		AA00000E /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
+		AA000010 /* HistogramManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistogramManager.swift; sourceTree = "<group>"; };
+		AA000012 /* FocusPeakingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusPeakingManager.swift; sourceTree = "<group>"; };
+		AA000014 /* FilmPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FilmPreset.swift; path = Models/FilmPreset.swift; sourceTree = "<group>"; };
+		AA000016 /* WatermarkEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatermarkEngine.swift; sourceTree = "<group>"; };
+		AA000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA00001A /* ProCameraApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProCameraApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A1000018 /* Frameworks */ = {
+		AA00001C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -47,29 +47,29 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A100001A /* Root */ = {
+		AA00001E /* Root */ = {
 			isa = PBXGroup;
 			children = (
-				A1000002 /* ProCameraAppApp.swift */,
-				A1000004 /* ContentView.swift */,
-				A1000006 /* CameraManager.swift */,
-				A1000008 /* ColorFilterManager.swift */,
-				A100000E /* MotionManager.swift */,
-				A1000010 /* HistogramManager.swift */,
-				A1000012 /* FocusPeakingManager.swift */,
-				A100000A /* CameraSettings.swift */,
-				A100000C /* CameraPreviewView.swift */,
-				A1000015 /* FilmPreset.swift */,
-				A1000018 /* WatermarkEngine.swift */,
-				A1000014 /* Info.plist */,
-				A100001C /* Products */,
+				AA000002 /* ProCameraAppApp.swift */,
+				AA000004 /* ContentView.swift */,
+				AA000006 /* CameraManager.swift */,
+				AA000008 /* ColorFilterManager.swift */,
+				AA00000E /* MotionManager.swift */,
+				AA000010 /* HistogramManager.swift */,
+				AA000012 /* FocusPeakingManager.swift */,
+				AA00000A /* CameraSettings.swift */,
+				AA00000C /* CameraPreviewView.swift */,
+				AA000014 /* FilmPreset.swift */,
+				AA000016 /* WatermarkEngine.swift */,
+				AA000018 /* Info.plist */,
+				AA000020 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A100001C /* Products */ = {
+		AA000020 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A1000016 /* ProCameraApp.app */,
+				AA00001A /* ProCameraApp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,13 +77,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A100001E /* ProCameraApp */ = {
+		AA000022 /* ProCameraApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1000026 /* Build configuration list for PBXNativeTarget "ProCameraApp" */;
+			buildConfigurationList = AA00002A /* Build configuration list for PBXNativeTarget "ProCameraApp" */;
 			buildPhases = (
-				A1000020 /* Sources */,
-				A1000018 /* Frameworks */,
-				A1000022 /* Resources */,
+				AA000024 /* Sources */,
+				AA00001C /* Frameworks */,
+				AA000026 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -91,25 +91,25 @@
 			);
 			name = ProCameraApp;
 			productName = ProCameraApp;
-			productReference = A1000016 /* ProCameraApp.app */;
+			productReference = AA00001A /* ProCameraApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		A1000024 /* Project object */ = {
+		AA000028 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1430;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					A100001E = {
+					AA000022 = {
 						CreatedOnToolsVersion = 14.3;
 					};
 				};
 			};
-			buildConfigurationList = A1000028 /* Build configuration list for PBXProject "ProCameraApp" */;
+			buildConfigurationList = AA00002E /* Build configuration list for PBXProject "ProCameraApp" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -117,18 +117,18 @@
 				en,
 				Base,
 			);
-			mainGroup = A100001A /* Root */;
-			productRefGroup = A100001C /* Products */;
+			mainGroup = AA00001E /* Root */;
+			productRefGroup = AA000020 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A100001E /* ProCameraApp */,
+				AA000022 /* ProCameraApp */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A1000022 /* Resources */ = {
+		AA000026 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -138,28 +138,28 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A1000020 /* Sources */ = {
+		AA000024 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1000001 /* ProCameraAppApp.swift in Sources */,
-				A1000003 /* ContentView.swift in Sources */,
-				A1000005 /* CameraManager.swift in Sources */,
-				A1000007 /* ColorFilterManager.swift in Sources */,
-				A1000009 /* CameraSettings.swift in Sources */,
-				A100000B /* CameraPreviewView.swift in Sources */,
-				A100000D /* MotionManager.swift in Sources */,
-				A100000F /* HistogramManager.swift in Sources */,
-				A1000011 /* FocusPeakingManager.swift in Sources */,
-				A1000013 /* FilmPreset.swift in Sources */,
-				A1000017 /* WatermarkEngine.swift in Sources */,
+				AA000001 /* ProCameraAppApp.swift in Sources */,
+				AA000003 /* ContentView.swift in Sources */,
+				AA000005 /* CameraManager.swift in Sources */,
+				AA000007 /* ColorFilterManager.swift in Sources */,
+				AA000009 /* CameraSettings.swift in Sources */,
+				AA00000B /* CameraPreviewView.swift in Sources */,
+				AA00000D /* MotionManager.swift in Sources */,
+				AA00000F /* HistogramManager.swift in Sources */,
+				AA000011 /* FocusPeakingManager.swift in Sources */,
+				AA000013 /* FilmPreset.swift in Sources */,
+				AA000015 /* WatermarkEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		A100002A /* Debug */ = {
+		AA000030 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -222,7 +222,7 @@
 			};
 			name = Debug;
 		};
-		A100002C /* Release */ = {
+		AA000032 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -278,7 +278,7 @@
 			};
 			name = Release;
 		};
-		A100002E /* Debug */ = {
+		AA000034 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -287,8 +287,8 @@
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pro Camera App cần truy cập thư viện ảnh để lưu và quản lý ảnh đã chụp.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pro Camera App cần lưu ảnh vào thư viện ảnh của bạn.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pro Camera App can access photo library to save and manage photos.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pro Camera App needs to save photos to your library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -307,7 +307,7 @@
 			};
 			name = Debug;
 		};
-		A1000030 /* Release */ = {
+		AA000036 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -316,8 +316,8 @@
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pro Camera App cần truy cập thư viện ảnh để lưu và quản lý ảnh đã chụp.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pro Camera App cần lưu ảnh vào thư viện ảnh của bạn.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pro Camera App can access photo library to save and manage photos.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Pro Camera App needs to save photos to your library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -339,20 +339,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1000028 /* Build configuration list for PBXProject "ProCameraApp" */ = {
+		AA00002E /* Build configuration list for PBXProject "ProCameraApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A100002A /* Debug */,
-				A100002C /* Release */,
+				AA000030 /* Debug */,
+				AA000032 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A1000026 /* Build configuration list for PBXNativeTarget "ProCameraApp" */ = {
+		AA00002A /* Build configuration list for PBXNativeTarget "ProCameraApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A100002E /* Debug */,
-				A1000030 /* Release */,
+				AA000034 /* Debug */,
+				AA000036 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -360,5 +360,5 @@
 /* End XCConfigurationList section */
 
 	};
-	rootObject = A1000024 /* Project object */;
+	rootObject = AA000028 /* Project object */;
 }
