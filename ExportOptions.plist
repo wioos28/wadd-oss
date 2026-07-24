@@ -4,8 +4,7 @@
 <dict>
 	<key>method</key>
 	<string>app-store</string>
-	<key>teamID</key>
-	<string>YOUR_TEAM_ID</string>
+
 	<key>uploadBitcode</key>
 	<false/>
 	<key>uploadSymbols</key>
@@ -14,7 +13,6 @@
 	<false/>
 	<key>destination</key>
 	<string>export</string>
-	<key>signingStyle</key>
-	<string>automatic</string>
+
 </dict>
 </plist>
