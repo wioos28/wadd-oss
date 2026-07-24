@@ -6,17 +6,20 @@ workflows:
     name: iOS Release Build
     max_build_duration: 60
     scripts:
-      - name: Find Project
-        script: |
-          echo "=== CURRENT DIRECTORY ==="
-          pwd
-          echo "=== FILES IN DIRECTORY ==="
-          ls -la
-          echo "=== SEARCHING FOR PROJECT ==="
-          find . -name "ProCameraApp.xcodeproj"
       - name: Build iOS
         script: |
-          xcodebuild \
+          # Tự động tìm vị trí file xcodeproj
+          PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
+
+          if [ -z "$PROJECT_PATH" ]; then
+            echo "Lỗi: Không tìm thấy file ProCameraApp.xcodeproj"
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$PROJECT_PATH")
+          cd "$PROJECT_DIR"
+
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
             -project ProCameraApp.xcodeproj \
             -scheme ProCameraApp \
             -configuration Release \
@@ -25,7 +28,11 @@ workflows:
             archive
       - name: Export IPA
         script: |
-          xcodebuild \
+          PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
+          PROJECT_DIR=$(dirname "$PROJECT_PATH")
+          cd "$PROJECT_DIR"
+
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
             -exportArchive \
             -archivePath $CM_BUILD_DIR/build/ProCameraApp.xcarchive \
             -exportOptionsPlist ExportOptions.plist \
@@ -40,7 +47,11 @@ workflows:
     scripts:
       - name: Build iOS Debug
         script: |
-          xcodebuild \
+          PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
+          PROJECT_DIR=$(dirname "$PROJECT_PATH")
+          cd "$PROJECT_DIR"
+
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
             -project ProCameraApp.xcodeproj \
             -scheme ProCameraApp \
             -configuration Debug \
@@ -56,7 +67,11 @@ workflows:
     scripts:
       - name: Run Unit Tests
         script: |
-          xcodebuild \
+          PROJECT_PATH=$(find . -name "ProCameraApp.xcodeproj" -maxdepth 4 | head -n 1)
+          PROJECT_DIR=$(dirname "$PROJECT_PATH")
+          cd "$PROJECT_DIR"
+
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
             -project ProCameraApp.xcodeproj \
             -scheme ProCameraApp \
             -configuration Debug \
