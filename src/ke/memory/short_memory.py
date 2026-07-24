@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from ke.memory.base import BaseMemory
 from ke.memory.models import MemoryEntry, MemoryType
@@ -27,7 +27,7 @@ class ShortTermMemory(BaseMemory):
 
     def get_fresh(self, max_age_hours: int | None = None) -> list[MemoryEntry]:
         """Get entries newer than max_age_hours."""
-        cutoff = datetime.utcnow() - timedelta(hours=max_age_hours or self.decay_hours)
+        cutoff = datetime.now(tz=UTC) - timedelta(hours=max_age_hours or self.decay_hours)
         return [
             e for e in self._entries.values()
             if e.created_at > cutoff
@@ -35,7 +35,7 @@ class ShortTermMemory(BaseMemory):
 
     def get_by_decay(self) -> list[MemoryEntry]:
         """Get entries sorted by decay (oldest first)."""
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC)
         entries = []
         for e in self._entries.values():
             age_hours = (now - e.created_at).total_seconds() / 3600
@@ -46,7 +46,7 @@ class ShortTermMemory(BaseMemory):
 
     def decay(self) -> int:
         """Remove entries that have fully decayed. Returns count removed."""
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC)
         decay_limit = now - timedelta(hours=self.decay_hours)
         expired = [
             eid for eid, e in self._entries.items()

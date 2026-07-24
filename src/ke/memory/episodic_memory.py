@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from ke.memory.base import BaseMemory
@@ -33,7 +33,7 @@ class EpisodicMemory(BaseMemory):
             importance=importance,
             tags=(tags or []) + ["episode"],
             metadata={
-                "event_time": datetime.utcnow().isoformat(),
+                "event_time": datetime.now(tz=UTC).isoformat(),
                 "context": context or {},
             },
         )
@@ -58,7 +58,7 @@ class EpisodicMemory(BaseMemory):
 
     def get_recent_episodes(self, hours: int = 24) -> list[MemoryEntry]:
         """Get episodes from the last N hours."""
-        cutoff = datetime.utcnow().timestamp() - (hours * 3600)
+        cutoff = datetime.now(tz=UTC).timestamp() - (hours * 3600)
         results = []
         for entry in self._entries.values():
             if entry.created_at.timestamp() >= cutoff:

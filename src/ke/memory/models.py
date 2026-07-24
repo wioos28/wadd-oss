@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -34,8 +34,8 @@ class MemoryEntry(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     importance: float = Field(default=0.5, ge=0.0, le=1.0)
     access_count: int = 0
-    last_accessed: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_accessed: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     expires_at: datetime | None = None
     source: str = ""
     embedding_id: str | None = None
@@ -45,7 +45,7 @@ class MemoryEntry(BaseModel):
         """Check if the entry has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(tz=UTC) > self.expires_at
 
 
 class MemoryQuery(BaseModel):

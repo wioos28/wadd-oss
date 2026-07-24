@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from ke.memory.base import BaseMemory
@@ -24,7 +24,7 @@ class ConversationMemory(BaseMemory):
 
     def start_session(self, session_id: str | None = None) -> str:
         """Start a new conversation session."""
-        self._current_session = session_id or f"session_{datetime.utcnow().isoformat()}"
+        self._current_session = session_id or f"session_{datetime.now(tz=UTC).isoformat()}"
         self._turn_count = 0
         return self._current_session
 

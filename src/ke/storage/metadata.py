@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -204,7 +204,7 @@ class MetadataStore:
         with self.conn:
             self.conn.execute(
                 "INSERT INTO logs (event_type, data, timestamp) VALUES (?, ?, ?)",
-                (event_type, json.dumps(data or {}), datetime.utcnow().isoformat()),
+                (event_type, json.dumps(data or {}), datetime.now(tz=UTC).isoformat()),
             )
 
     def _row_to_entry(self, row: sqlite3.Row) -> KnowledgeEntry:

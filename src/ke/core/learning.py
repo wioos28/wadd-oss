@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ke.core.models import Confidence, KnowledgeEntry, Relationship
 from ke.embeddings.model import EmbeddingModel
@@ -43,7 +43,7 @@ class KnowledgeLearner:
             confidence=Confidence(score=0.7, source="task_learning"),
             metadata={
                 "task_description": task_description[:500],
-                "learned_at": datetime.utcnow().isoformat(),
+                "learned_at": datetime.now(tz=UTC).isoformat(),
             },
         )
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ke.memory.models import MemoryEntry, MemoryQuery, MemoryType
@@ -38,7 +38,7 @@ class BaseMemory:
         )
 
         if ttl_seconds:
-            entry.expires_at = datetime.utcnow() + timedelta(seconds=ttl_seconds)
+            entry.expires_at = datetime.now(tz=UTC) + timedelta(seconds=ttl_seconds)
 
         self._entries[entry.id] = entry
         self._enforce_limit()
@@ -49,7 +49,7 @@ class BaseMemory:
         entry = self._entries.get(entry_id)
         if entry:
             entry.access_count += 1
-            entry.last_accessed = datetime.utcnow()
+            entry.last_accessed = datetime.now(tz=UTC)
         return entry
 
     def search(self, query: MemoryQuery) -> list[MemoryEntry]:
@@ -151,7 +151,7 @@ class BaseMemory:
 
     def cleanup_expired(self) -> int:
         """Remove expired entries. Returns count removed."""
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC)
         expired = [
             eid for eid, e in self._entries.items()
             if e.expires_at and e.expires_at < now

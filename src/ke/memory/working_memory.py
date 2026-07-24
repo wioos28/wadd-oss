@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ke.memory.base import BaseMemory
@@ -23,7 +23,7 @@ class WorkingMemory(BaseMemory):
 
     def start_task(self, task_description: str) -> None:
         """Mark task start."""
-        self._task_start = datetime.utcnow()
+        self._task_start = datetime.now(tz=UTC)
         self.store(
             content=f"Task started: {task_description}",
             summary=task_description[:100],

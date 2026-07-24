@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from ke.core.models import KnowledgeEntry, QueryResult
 from ke.storage.metadata import MetadataStore
@@ -91,5 +91,5 @@ class MetadataRetriever:
 
     def search_recent(self, hours: int = 24, limit: int = 10) -> list[QueryResult]:
         """Search for recently created/updated entries."""
-        after = datetime.utcnow() - timedelta(hours=hours)
+        after = datetime.now(tz=UTC) - timedelta(hours=hours)
         return self.search_by_date(after=after, limit=limit)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import socket
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ke.core.models import NetworkState
 
@@ -57,7 +57,7 @@ class NetworkDetector:
             interfaces=interfaces,
             latency_ms=latency_ms,
             bandwidth_mbps=bandwidth_mbps,
-            last_checked=datetime.utcnow(),
+            last_checked=datetime.now(tz=UTC),
         )
 
         self._last_state = state
