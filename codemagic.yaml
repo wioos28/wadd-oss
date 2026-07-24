@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Codemagic CI/CD Configuration for ProCameraApp
 # https://docs.codemagic.io/getting-started/yaml/
 
@@ -16,10 +15,6 @@ workflows:
         script: |
           cd ios
           pod install --repo-update || echo "No CocoaPods, skipping"
-      - name: Set up Flutter (if using Flutter)
-        script: |
-          cd ios
-          # Add any additional setup here
       - name: Build iOS
         script: |
           cd ios
@@ -40,160 +35,6 @@ workflows:
             -exportPath $CM_BUILD_DIR/output
     artifacts:
       - build/ios/output/*.ipa
-=======
-# Codemagic CI/CD - LFS Bootable Image for UTM SE
-
-workflows:
-  lfs-build:
-    name: LFS Bootable Image
-    max_build_duration: 120
-    environment:
-      groups:
-        - lfs_credentials
-      vars:
-        LFS_VERSION: "12.0"
-    triggering:
-      events:
-        - push
-        - tag
-      branch_patterns:
-        - pattern: "main"
-          include: true
-      tag_patterns:
-        - pattern: "v*"
-          include: true
-    scripts:
-      - name: Setup Environment
-        script: |
-          echo "Setting up build environment..."
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            bison \
-            gawk \
-            texinfo \
-            python3 \
-            unzip \
-            wget \
-            curl \
-            git \
-            libncurses-dev \
-            libssl-dev \
-            bc \
-            flex \
-            qemu-utils \
-            grub-pc-bin \
-            grub-common \
-            cpio \
-            gzip \
-            e2fsprogs
-          echo "Environment ready!"
-
-      - name: Clone Project
-        script: |
-          echo "Cloning LFS project..."
-          git clone https://github.com/wioos28/wadd-oss.git
-          cd wadd-oss/lfs-project || cd ./lfs-project
-          chmod +x scripts/*.sh
-          chmod +x *.sh
-          echo "Project cloned!"
-
-      - name: Create Bootable Image
-        script: |
-          echo "Creating bootable image..."
-          cd wadd-oss/lfs-project || cd ./lfs-project
-          chmod +x scripts/create-bootable-direct.sh
-          sudo ./scripts/create-bootable-direct.sh
-          if [ -f "lfs-bootable.img" ]; then
-            echo "Bootable image created!"
-            ls -lh lfs-bootable.img
-          else
-            echo "ERROR: Failed to create image"
-            exit 1
-          fi
-
-      - name: Create Full Disk Image (Optional)
-        script: |
-          echo "Creating full disk image..."
-          cd wadd-oss/lfs-project || cd ./lfs-project
-          
-          # Only run if LFS build completed
-          if [ -d "/mnt/lfs" ]; then
-            chmod +x scripts/create-disk-image.sh
-            sudo ./scripts/create-disk-image.sh
-            echo "Full disk image created!"
-          else
-            echo "Skipping full image - LFS not built"
-            echo "Creating minimal image instead..."
-            chmod +x scripts/create-minimal-boot.sh
-            sudo ./scripts/create-minimal-boot.sh
-          fi
-
-      - name: Generate Report
-        script: |
-          echo "Generating build report..."
-          cd wadd-oss/lfs-project || cd ./lfs-project
-          
-          cat > BUILD_REPORT.md << EOF
-          # LFS Build Report
-          
-          ## Build Info
-          - Time: $(date)
-          - Machine: CodeMagic Linux
-          - Version: 12.0
-          
-          ## Files Created
-          EOF
-          
-          if [ -f "lfs-bootable.img" ]; then
-            echo "- lfs-bootable.img: $(ls -lh lfs-bootable.img | awk '{print $5}')" >> BUILD_REPORT.md
-          fi
-          if [ -f "lfs-utm-se.img" ]; then
-            echo "- lfs-utm-se.img: $(ls -lh lfs-utm-se.img | awk '{print $5}')" >> BUILD_REPORT.md
-          fi
-          
-          echo "Report generated!"
-
-      - name: Publish to GitHub
-        script: |
-          if [ -z "${CM_TAG}" ]; then
-            echo "Not a tag build, skipping publish"
-            exit 0
-          fi
-          
-          # Install gh CLI
-          type -p wget >/dev/null || sudo apt-get install wget -y
-          sudo mkdir -p -m 755 /etc/apt/keyrings
-          wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
-          sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install gh -y
-          
-          # Auth and create release
-          echo "${GITHUB_TOKEN}" | gh auth login --with-token
-          cd wadd-oss/lfs-project || cd ./lfs-project
-          gh release create "${CM_TAG}" \
-            --title "LFS Build ${CM_TAG}" \
-            --notes "LFS Bootable Image for UTM SE" \
-            lfs-bootable.img \
-            BUILD_REPORT.md || true
-
-    artifacts:
-      - lfs-project/lfs-bootable.img
-      - lfs-project/lfs-utm-se.img
-      - lfs-project/BUILD_REPORT.md
-      - lfs-project/docs/**
-
->>>>>>> 8ca9e2f0231308612c59d98bb6632de61803ea24
-    publishing:
-      email:
-        recipients:
-          - your-email@example.com
-        notify:
-          success: true
-          failure: true
-<<<<<<< HEAD
 
   ios-debug:
     name: iOS Debug Build
@@ -253,11 +94,8 @@ trigger:
     - pattern: 'v*'
       include: true
 
-# Cache configuration
 cache:
   cache_paths:
     - ~/Library/Caches/CocoaPods
     - ~/Library/Caches/com.apple.dt.Xcode
     - ios/Pods
-=======
->>>>>>> 8ca9e2f0231308612c59d98bb6632de61803ea24
