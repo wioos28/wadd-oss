@@ -21,15 +21,27 @@ workflows:
           # Thực hiện lệnh build/archive
           xcodebuild -project ProCameraApp.xcodeproj -scheme ProCameraApp -configuration Release -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO -archivePath $HOME/clone/build/ProCameraApp.xcarchive archive
 
-      - name: Export IPA
+      - name: Package IPA (manual)
         script: |
-          xcodebuild -exportArchive \
-            -archivePath $HOME/clone/build/ProCameraApp.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath $HOME/clone/build/ipa
+          XCARCHIVE_PATH="$HOME/clone/build/ProCameraApp.xcarchive"
+          APP_PATH="$XCARCHIVE_PATH/Products/Applications/ProCameraApp.app"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "❌ Lỗi: Không tìm thấy file .app trong thư mục archive!"
+            exit 1
+          fi
+
+          echo "📦 Đang đóng gói .ipa thủ công..."
+
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r ProCameraApp.ipa Payload
+          rm -rf Payload
+
+          echo "🎉 Tạo file .ipa thành công!"
     artifacts:
       - $HOME/clone/build/ProCameraApp.xcarchive
-      - $HOME/clone/build/ipa/*.ipa
+      - ProCameraApp.ipa
 
 trigger:
   events:
