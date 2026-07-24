@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>development</string>
+	<string>ad-hoc</string>
 	<key>destination</key>
 	<string>export</string>
 	<key>signingStyle</key>
-	<string>manual</string>
+	<string>automatic</string>
 	<key>compileBitcode</key>
 	<false/>
 	<key>uploadBitcode</key>
@@ -16,5 +16,7 @@
 	<true/>
 	<key>thinning</key>
 	<string>&lt;none&gt;</string>
+	<key>stripSwiftSymbols</key>
+	<true/>
 </dict>
 </plist>
