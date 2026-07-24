@@ -200,13 +200,13 @@ class WatermarkEngine: ObservableObject {
     ///   - location: Vị trí hiển thị
     ///   - applyWatermarkFlag: Có áp dụng watermark không
     /// - Returns: Data ảnh đã xử lý
-    nonisolated func processImage(
+    func processImage(
         imageData: Data,
         date: Date = Date(),
         location: String? = nil,
         applyWatermarkFlag: Bool = true
-    ) -> Data {
-        // Bước 1: Xóa GPS metadata
+    ) async -> Data {
+        // Bước 1: Xóa GPS metadata (nonisolated, safe to call from any context)
         let cleanData = stripGPSMetadata(from: imageData)
 
         // Nếu không cần watermark, trả về data đã xóa GPS
@@ -219,7 +219,7 @@ class WatermarkEngine: ObservableObject {
             return cleanData
         }
 
-        // Bước 3: Vẽ watermark
+        // Bước 3: Vẽ watermark (runs on MainActor since class is @MainActor)
         let watermarkedImage = applyWatermark(
             to: uiImage,
             date: date,

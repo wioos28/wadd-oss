@@ -80,6 +80,7 @@ struct ContentView: View {
                     watermarkEngine: watermarkEngine,
                     showingSettings: $showingSettings,
                     showingFilterPanel: $showingFilterPanel,
+                    showingFilmPanel: $showingFilmPanel,
                     showingProTools: $showingProTools
                 )
 
@@ -238,6 +239,7 @@ struct TopBarView: View {
     @ObservedObject var watermarkEngine: WatermarkEngine
     @Binding var showingSettings: Bool
     @Binding var showingFilterPanel: Bool
+    @Binding var showingFilmPanel: Bool
     @Binding var showingProTools: Bool
 
     var body: some View {

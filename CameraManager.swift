@@ -738,7 +738,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 // Xóa GPS metadata
-                var processedData = stripGPSMetadataSync(from: photoData)
+                var processedData = self.stripGPSMetadataSync(from: photoData)
 
                 // Áp dụng watermark nếu được bật
                 if let uiImage = UIImage(data: processedData) {
@@ -760,7 +760,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
     }
 
     /// Sync wrapper for stripping GPS metadata
-    private func stripGPSMetadataSync(from data: Data) -> Data {
+    private nonisolated func stripGPSMetadataSync(from data: Data) -> Data {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
             return data
         }
@@ -792,7 +792,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
     }
 
     /// Sync wrapper for applying watermark
-    private func applyWatermarkSync(to image: UIImage, date: Date, location: String) -> UIImage {
+    private nonisolated func applyWatermarkSync(to image: UIImage, date: Date, location: String) -> UIImage {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -900,7 +900,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
     }
 
     /// Get UTType string based on capture format
-    private func getUTType(for format: CaptureFormat) -> String {
+    private nonisolated func getUTType(for format: CaptureFormat) -> String {
         switch format {
         case .ProRAW, .RAW:
             return "public.dng"

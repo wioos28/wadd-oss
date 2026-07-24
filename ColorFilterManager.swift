@@ -488,8 +488,8 @@ class FilterPreset: Identifiable {
     static let warm = FilterPreset(
         name: "Warm",
         adjustments: ColorAdjustments(
-            temperature: 7000,
             saturation: 1.1,
+            temperature: 7000,
             brightness: 0.05
         )
     )
@@ -498,8 +498,8 @@ class FilterPreset: Identifiable {
     static let cool = FilterPreset(
         name: "Cool",
         adjustments: ColorAdjustments(
-            temperature: 4000,
             saturation: 0.9,
+            temperature: 4000,
             contrast: 1.05
         )
     )
@@ -521,8 +521,8 @@ class FilterPreset: Identifiable {
             saturation: 0.9,
             contrast: 1.15,
             brightness: 0.05,
-            grain: 0.15,
-            vignette: 0.3
+            vignette: 0.3,
+            grain: 0.15
         )
     )
 
