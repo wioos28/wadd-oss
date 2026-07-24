@@ -16,11 +16,21 @@ struct CameraPreviewView: UIViewRepresentable {
     func makeUIView(context: Context) -> CameraPreviewUIView {
         let view = CameraPreviewUIView()
         view.cameraManager = cameraManager
+
+        // Connect preview layer to session when available
+        if let session = cameraManager.captureSession {
+            view.setupPreviewLayer(session: session)
+        }
+
         return view
     }
 
     func updateUIView(_ uiView: CameraPreviewUIView, context: Context) {
-        // Update if needed
+        // Connect preview layer if not yet connected
+        if uiView.previewLayer == nil,
+           let session = cameraManager.captureSession {
+            uiView.setupPreviewLayer(session: session)
+        }
     }
 }
 
@@ -29,7 +39,7 @@ struct CameraPreviewView: UIViewRepresentable {
 class CameraPreviewUIView: UIView {
     var cameraManager: CameraManager?
 
-    private var previewLayer: AVCaptureVideoPreviewLayer?
+    var previewLayer: AVCaptureVideoPreviewLayer?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -56,16 +66,22 @@ class CameraPreviewUIView: UIView {
 
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.connection?.videoOrientation = .portrait
+        if let connection = previewLayer.connection,
+           connection.isVideoRotationAngleSupported(90) {
+            connection.videoRotationAngle = 90 // Portrait
+        }
         previewLayer.frame = bounds
 
         layer.addSublayer(previewLayer)
         self.previewLayer = previewLayer
     }
 
-    /// Update video orientation
-    func updateVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
-        previewLayer?.connection?.videoOrientation = orientation
+    /// Update video rotation angle
+    func updateVideoRotationAngle(_ angle: CGFloat) {
+        if let connection = previewLayer?.connection,
+           connection.isVideoRotationAngleSupported(angle) {
+            connection.videoRotationAngle = angle
+        }
     }
 }
 

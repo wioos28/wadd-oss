@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var showingFilterPanel = false
     @State private var showingSettings = false
     @State private var showingProTools = false
+    @State private var showError = false
 
     // MARK: - Overlay Options
     @State private var showGrid3x3 = true
@@ -156,13 +157,18 @@ struct ContentView: View {
             histogramManager.stopAnalysis()
             focusPeakingManager.disable()
         }
-        .alert("Lỗi", isPresented: .constant(cameraManager.state.error != nil)) {
+        .alert("Lỗi", isPresented: $showError) {
             Button("OK") {
                 cameraManager.state = .idle
             }
         } message: {
             if case .error(let message) = cameraManager.state {
                 Text(message)
+            }
+        }
+        .onChange(of: cameraManager.state) { newState in
+            if case .error = newState {
+                showError = true
             }
         }
     }

@@ -61,7 +61,7 @@ class CameraManager: NSObject, ObservableObject {
     // MARK: - Private Properties
 
     /// AVCaptureSession chính
-    private var captureSession: AVCaptureSession?
+    var captureSession: AVCaptureSession?
 
     /// Current capture device (camera lens)
     private var currentDevice: AVCaptureDevice?
@@ -273,10 +273,8 @@ class CameraManager: NSObject, ObservableObject {
         }
 
         // ProRAW/DNG support
-        if #available(iOS 12.0, *) {
-            if photoOutput.supportedPhotoCodecTypes.contains(.dng) {
-                print("✓ DNG (RAW) codec supported")
-            }
+        if photoOutput.supportedPhotoCodecTypes.contains(.dng) {
+            print("✓ DNG (RAW) codec supported")
         }
     }
 
@@ -303,8 +301,8 @@ class CameraManager: NSObject, ObservableObject {
 
             // Set connection video orientation
             if let connection = videoOutput.connection(with: .video) {
-                if connection.isVideoOrientationSupported {
-                    connection.videoOrientation = .portrait
+                if connection.isVideoRotationAngleSupported(90) {
+                    connection.videoRotationAngle = 90 // Portrait
                 }
                 if connection.isVideoMirroringSupported {
                     connection.isVideoMirrored = false
@@ -338,7 +336,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error setting ISO: \(error)")
+            errorMessage = "Lỗi thiết lập ISO: \(error.localizedDescription)"
         }
     }
 
@@ -367,7 +365,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error setting shutter speed: \(error)")
+            errorMessage = "Lỗi thiết lập Shutter Speed: \(error.localizedDescription)"
         }
     }
 
@@ -388,7 +386,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error setting EV: \(error)")
+            errorMessage = "Lỗi thiết lập EV: \(error.localizedDescription)"
         }
     }
 
@@ -429,7 +427,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error setting white balance: \(error)")
+            errorMessage = "Lỗi thiết lập White Balance: \(error.localizedDescription)"
         }
     }
 
@@ -482,7 +480,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error setting torch: \(error)")
+            errorMessage = "Lỗi thiết lập Torch: \(error.localizedDescription)"
         }
     }
 
@@ -496,7 +494,7 @@ class CameraManager: NSObject, ObservableObject {
 
             // Clamp zoom trong khoảng hỗ trợ
             let minZoom = device.minAvailableVideoZoomFactor
-            let maxZoom = device.min(device.activeFormat.videoMaxZoomFactor, 10.0)
+            let maxZoom = min(device.activeFormat.videoMaxZoomFactor, 10.0)
             let clampedZoom = max(minZoom, min(zoom, maxZoom))
 
             device.videoZoomFactor = clampedZoom
@@ -505,7 +503,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error setting zoom: \(error)")
+            errorMessage = "Lỗi thiết lập Zoom: \(error.localizedDescription)"
         }
     }
 
@@ -528,7 +526,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error setting focus point: \(error)")
+            errorMessage = "Lỗi thiết lập Focus: \(error.localizedDescription)"
         }
     }
 
@@ -541,8 +539,12 @@ class CameraManager: NSObject, ObservableObject {
     /// Switch to specific camera position
     func switchCamera(to position: CameraPosition) {
         Task {
-            await setupCameraInput(for: position)
-            currentPosition = position
+            do {
+                try await setupCameraInput(for: position)
+                currentPosition = position
+            } catch {
+                state = .error("Không thể chuyển camera: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -597,7 +599,7 @@ class CameraManager: NSObject, ObservableObject {
             device.unlockForConfiguration()
 
         } catch {
-            print("Error applying settings: \(error)")
+            errorMessage = "Lỗi áp dụng cài đặt: \(error.localizedDescription)"
         }
     }
 
@@ -625,8 +627,7 @@ class CameraManager: NSObject, ObservableObject {
         switch settings.captureFormat {
         case .ProRAW:
             // ProRAW capture (iPhone 12 Pro+)
-            if #available(iOS 12.0, *),
-               let rawFormat = photoOutput?.availableRawPhotoPixelFormatTypes.first {
+            if let rawFormat = photoOutput?.availableRawPhotoPixelFormatTypes.first {
                 photoSettings = AVCapturePhotoSettings(
                     rawPixelFormatType: rawFormat,
                     processedFormat: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
@@ -720,11 +721,10 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
                 // Tạo asset request
                 let request = PHAssetCreationRequest.forAsset()
 
-                // Thêm photo data
-                request.addResource(with: .photo, data: photoData, options: nil)
-
-                // Thêm metadata
+                // Set UTType trước khi thêm resource
                 request.uniformTypeIdentifier = self?.getUTType()
+
+                // Thêm photo data (CHỈ MỘT LẦN)
                 request.addResource(with: .photo, data: photoData, options: nil)
 
             }) { [weak self] success, error in
@@ -771,14 +771,18 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
             return
         }
 
-        // Process histogram data
-        if let histogramManager = histogramManager, histogramManager.isAnalyzing {
-            histogramManager.processSampleBuffer(sampleBuffer)
+        // Process histogram data on main thread
+        Task { @MainActor in
+            if let histogramManager = self.histogramManager, histogramManager.isAnalyzing {
+                histogramManager.processSampleBuffer(sampleBuffer)
+            }
         }
 
-        // Process focus peaking
-        if let focusPeakingManager = focusPeakingManager, focusPeakingManager.isEnabled {
-            focusPeakingManager.processSampleBuffer(sampleBuffer)
+        // Process focus peaking on main thread
+        Task { @MainActor in
+            if let focusPeakingManager = self.focusPeakingManager, focusPeakingManager.isEnabled {
+                focusPeakingManager.processSampleBuffer(sampleBuffer)
+            }
         }
 
         // Update current frame on main thread
@@ -786,7 +790,7 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
             self.currentFrame = pixelBuffer
 
             // Apply color filters if available
-            if let colorFilterManager = colorFilterManager {
+            if let colorFilterManager = self.colorFilterManager {
                 colorFilterManager.processFrame(pixelBuffer)
             }
         }

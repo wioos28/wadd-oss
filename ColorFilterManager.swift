@@ -37,7 +37,6 @@ class ColorFilterManager: ObservableObject {
     /// CIFilter cho color adjustments
     private var colorControlsFilter: CIFilter?
     private var temperatureFilter: CIFilter?
-    private var tintFilter: CIFilter?
     private var exposureFilter: CIFilter?
     private var highlightsFilter: CIFilter?
     private var shadowsFilter: CIFilter?
@@ -73,7 +72,6 @@ class ColorFilterManager: ObservableObject {
     private func setupFilters() {
         colorControlsFilter = CIFilter(name: "CIColorControls")
         temperatureFilter = CIFilter(name: "CITemperatureAndTint")
-        tintFilter = CIFilter(name: "CITemperatureAndTint")
         exposureFilter = CIFilter(name: "CIExposureAdjust")
         highlightsFilter = CIFilter(name: "CIHighlightShadowAdjust")
         shadowsFilter = CIFilter(name: "CIHighlightShadowAdjust")
@@ -174,13 +172,12 @@ class ColorFilterManager: ObservableObject {
 
         filter.setValue(image, forKey: kCIInputImageKey)
 
-        // Convert temperature (Kelvin) to neutral point
-        // 6500K = neutral, lower = warm, higher = cool
-        let neutralX = colorAdjustments.temperature / 6500.0
-        let neutralY = colorAdjustments.tint
+        // CITemperatureAndTint expects temperature in Kelvin (2000-10000)
+        // and tint in range (-100 to 100)
+        let temperature = CGFloat(colorAdjustments.temperature)
+        let tint = CGFloat(colorAdjustments.tint * 100.0) // Scale tint to -100...100
 
-        filter.setValue(CIVector(x: CGFloat(neutralX * 100), y: CGFloat(neutralY * 100)),
-                       forKey: "inputNeutral")
+        filter.setValue(CIVector(x: temperature, y: tint), forKey: "inputNeutral")
         filter.setValue(CIVector(x: 6500, y: 0), forKey: "inputTargetNeutral")
 
         return filter.outputImage ?? image
@@ -346,6 +343,11 @@ class ColorFilterManager: ObservableObject {
     /// Apply a filter preset
     func applyFilter(_ preset: FilterPreset?) {
         currentLUT = preset
+
+        // Apply preset adjustments if available
+        if let preset = preset, preset.cubeData.isEmpty {
+            colorAdjustments = preset.storedAdjustments
+        }
     }
 
     /// Remove current filter
@@ -415,6 +417,7 @@ class FilterPreset: Identifiable {
     let name: String
     let cubeData: [Float]
     let cubeSize: Int
+    let storedAdjustments: ColorAdjustments
 
     init(lutData: Data, name: String) throws {
         self.name = name
@@ -470,6 +473,7 @@ class FilterPreset: Identifiable {
 
         self.cubeSize = size
         self.cubeData = data
+        self.storedAdjustments = ColorAdjustments()
     }
 
     /// Pre-made filter: Vivid
@@ -542,6 +546,7 @@ class FilterPreset: Identifiable {
         self.name = name
         self.cubeData = []
         self.cubeSize = 0
+        self.storedAdjustments = adjustments
     }
 }
 

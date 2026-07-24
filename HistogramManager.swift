@@ -42,9 +42,6 @@ class HistogramManager: ObservableObject {
     /// Number of histogram bins
     private let binCount = 256
 
-    /// Processing queue
-    private let processingQueue = DispatchQueue(label: "com.procamera.histogram", qos: .userInteractive)
-
     /// Frame counter để skip frames (performance)
     private var frameCounter: Int = 0
     private let frameSkipInterval: Int = 3 // Process every 3rd frame
