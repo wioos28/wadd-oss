@@ -489,8 +489,8 @@ class FilterPreset: Identifiable {
         name: "Warm",
         adjustments: ColorAdjustments(
             saturation: 1.1,
-            temperature: 7000,
-            brightness: 0.05
+            brightness: 0.05,
+            temperature: 7000
         )
     )
 
@@ -499,8 +499,8 @@ class FilterPreset: Identifiable {
         name: "Cool",
         adjustments: ColorAdjustments(
             saturation: 0.9,
-            temperature: 4000,
-            contrast: 1.05
+            contrast: 1.05,
+            temperature: 4000
         )
     )
 

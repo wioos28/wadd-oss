@@ -164,15 +164,17 @@ class CameraManager: NSObject, ObservableObject {
 
     /// Bắt đầu chạy session
     func startSession() {
-        sessionQueue.async { [weak self] in
-            self?.captureSession?.startRunning()
+        let session = captureSession
+        sessionQueue.async {
+            session?.startRunning()
         }
     }
 
     /// Dừng session
     func stopSession() {
-        sessionQueue.async { [weak self] in
-            self?.captureSession?.stopRunning()
+        let session = captureSession
+        sessionQueue.async {
+            session?.stopRunning()
         }
     }
 

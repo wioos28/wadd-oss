@@ -368,7 +368,6 @@ struct HistogramView: View {
     private func rgbHistogram(in geometry: GeometryProxy) -> some View {
         Canvas { context, size in
             let width = size.width
-            let height = size.height
             let barWidth = width / CGFloat(histogramManager.redData.count)
 
             // Draw each channel with opacity
