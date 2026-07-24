@@ -16,7 +16,6 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
-*.xcodeproj
 *.xcworkspace
 
 # Swift Package Manager
