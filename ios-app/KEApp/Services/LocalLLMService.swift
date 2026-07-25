@@ -2,21 +2,23 @@ import Foundation
 import Combine
 
 // MARK: - Local LLM Service
-@MainActor
 class LocalLLMService: ObservableObject {
     static let shared = LocalLLMService()
 
-    @Published var isModelLoaded = false
-    @Published var modelPath: String?
-    @Published var errorMessage: String?
+    @MainActor @Published var isModelLoaded = false
+    @MainActor @Published var modelPath: String?
+    @MainActor @Published var errorMessage: String?
 
     private var inferenceEngine: LlamaInference?
 
     init() {
-        loadModel()
+        Task {
+            await loadModel()
+        }
     }
 
     // MARK: - Load Model from Bundle
+    @MainActor
     func loadModel() {
         print("Attempting to load embedded AI model...")
 
@@ -76,9 +78,17 @@ class LocalLLMService: ObservableObject {
         }
     }
 
+    // MARK: - Check if model is loaded (nonisolated for cross-actor access)
+    nonisolated func isModelReady() -> Bool {
+        MainActor.assumeIsolated {
+            self.isModelLoaded
+        }
+    }
+
     // MARK: - Generate Response (Offline)
     func generateResponse(prompt: String, maxTokens: Int = 512) async throws -> String {
-        guard isModelLoaded, let engine = inferenceEngine else {
+        let isLoaded = await isModelReady()
+        guard isLoaded, let engine = inferenceEngine else {
             throw LLMError.modelNotLoaded
         }
 
@@ -120,6 +130,7 @@ class LocalLLMService: ObservableObject {
     }
 
     // MARK: - Get Model Info
+    @MainActor
     func getModelInfo() -> [String: Any] {
         var info: [String: Any] = [
             "isLoaded": isModelLoaded,
@@ -137,7 +148,7 @@ class LocalLLMService: ObservableObject {
 }
 
 // MARK: - LLM Errors
-enum LLMError: LocalizedError {
+enum LLMError: LocalizedError, Sendable {
     case modelNotLoaded
     case modelLoadFailed(String)
     case inferenceFailed(String)
@@ -156,7 +167,7 @@ enum LLMError: LocalizedError {
 
 // MARK: - Llama Inference Engine (Placeholder)
 // TODO: Replace with actual llama.cpp Swift bindings
-class LlamaInference {
+final class LlamaInference: @unchecked Sendable {
     private let modelPath: String
     private let context: OpaquePointer?
 

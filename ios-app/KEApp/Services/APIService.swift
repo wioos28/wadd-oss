@@ -96,7 +96,7 @@ class APIService: ObservableObject {
     private func sendChatOffline(message: String, history: [[String: String]]) async throws -> String {
         let llmService = LocalLLMService.shared
 
-        guard llmService.isModelLoaded else {
+        guard llmService.isModelReady() else {
             throw LLMError.modelNotLoaded
         }
 
@@ -184,12 +184,13 @@ class APIService: ObservableObject {
     }
 
     // MARK: - Get Status
-    func getStatus() -> [String: Any] {
+    func getStatus() async -> [String: Any] {
+        let modelInfo = await LocalLLMService.shared.getModelInfo()
         return [
             "isOnline": isOnline,
             "offlineModeEnabled": offlineModeEnabled,
             "serverURL": baseURL,
-            "localModel": LocalLLMService.shared.getModelInfo()
+            "localModel": modelInfo
         ]
     }
 }
