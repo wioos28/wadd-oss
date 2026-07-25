@@ -3,8 +3,6 @@ workflows:
     name: KE App iOS
     max_build_duration: 60
     environment:
-      groups:
-        - apple_credentials
       xcode: latest
       cocoapods: default
     triggering:
@@ -21,80 +19,27 @@ workflows:
         script: |
           cd ios-app
           pod install --repo-update
-      - name: Build iOS
+      - name: Build iOS (No Code Sign)
         script: |
           xcodebuild -workspace ios-app/KEApp.xcworkspace \
             -scheme KEApp \
             -sdk iphoneos \
             -configuration Release \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
             archive
-      - name: Export IPA
+      - name: Export IPA (No Sign)
         script: |
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
             -exportOptionsPlist ios-app/ExportOptions.plist \
-            -exportPath $CM_BUILD_DIR/build/ios
+            -exportPath $CM_BUILD_DIR/build/ios \
+            -exportArchiveOptionsPlist ios-app/ExportOptions.plist
     artifacts:
       - build/ios/*.ipa
       - build/ios/**/*.xcarchive
-    publishing:
-      email:
-        recipients:
-          - team@example.com
-      app_store_connect:
-        api_key: $APPLE_CONNECT_API_KEY
-        key_id: $APPLE_CONNECT_API_KEY_ID
-        issuer_id: $APPLE_CONNECT_API_ISSUER_ID
-    cache:
-      cache_paths:
-        - ~/Library/Caches/CocoaPods
-        - ios-app/Pods
-
-  ke-app-ios-testflight:
-    name: KE App iOS - TestFlight
-    max_build_duration: 60
-    environment:
-      groups:
-        - apple_credentials
-      xcode: latest
-      cocoapods: default
-    triggering:
-      events:
-        - tag
-      tag_patterns:
-        - pattern: 'v*'
-          include: true
-    scripts:
-      - name: Install dependencies
-        script: |
-          cd ios-app
-          pod install --repo-update
-      - name: Build iOS
-        script: |
-          xcodebuild -workspace ios-app/KEApp.xcworkspace \
-            -scheme KEApp \
-            -sdk iphoneos \
-            -configuration Release \
-            -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            archive
-      - name: Export IPA
-        script: |
-          xcodebuild -exportArchive \
-            -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            -exportOptionsPlist ios-app/ExportOptions.plist \
-            -exportPath $CM_BUILD_DIR/build/ios
-    artifacts:
-      - build/ios/*.ipa
-    publishing:
-      app_store_connect:
-        api_key: $APPLE_CONNECT_API_KEY
-        key_id: $APPLE_CONNECT_API_KEY_ID
-        issuer_id: $APPLE_CONNECT_API_ISSUER_ID
-        submit_to_testflight: true
-      email:
-        recipients:
-          - team@example.com
     cache:
       cache_paths:
         - ~/Library/Caches/CocoaPods
