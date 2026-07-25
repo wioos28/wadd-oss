@@ -1,17 +1,15 @@
-"""Chat router - Streaming chat with SSE support."""
+"""Chat router - Streaming chat with Cognitive Engine and SSE support."""
 
 from __future__ import annotations
 
 import json
-import asyncio
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ke.config import load_config
-from ke.api.middleware.auth import get_current_user
 
 router = APIRouter()
 
@@ -36,28 +34,58 @@ class ChatResponse(BaseModel):
     response: str
     sources: list[dict] = []
     session_id: str
+    intent: str | None = None
 
 
 # ============================================================================
-# SSE Streaming Generator
+# SSE Streaming Generator with Cognitive Engine
 # ============================================================================
 
-async def stream_tokens(
+async def stream_with_cognitive_engine(
     message: str,
     history: list[dict],
     session_id: str | None,
 ) -> AsyncGenerator[str, None]:
-    """Stream tokens from LLM using Server-Sent Events."""
+    """Stream response using the Cognitive Engine pipeline."""
+    from ke.cognitive.engine import CognitiveEngine
+
+    config = load_config()
+    engine = CognitiveEngine(config)
+
+    try:
+        async for event in engine.process(
+            message=message,
+            conversation_history=history,
+            session_id=session_id,
+        ):
+            # Convert event to SSE format
+            yield f"data: {json.dumps(event)}\n\n"
+
+    except Exception as e:
+        # Error event
+        yield f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
+
+
+# ============================================================================
+# Legacy streaming (fallback)
+# ============================================================================
+
+async def stream_tokens_legacy(
+    message: str,
+    history: list[dict],
+    session_id: str | None,
+) -> AsyncGenerator[str, None]:
+    """Legacy streaming fallback when Cognitive Engine fails."""
     from ke.application.services import QueryService
 
     config = load_config()
     query_service = QueryService(config)
 
     try:
-        # First, retrieve relevant knowledge
+        # Retrieve relevant knowledge
         results = query_service.query(text=message, mode="hybrid", limit=5)
 
-        # Build context from retrieved knowledge
+        # Build context
         context_parts = []
         sources = []
         for r in results:
@@ -72,99 +100,42 @@ async def stream_tokens(
 
         context = "\n\n".join(context_parts) if context_parts else "No relevant context found."
 
-        # Build prompt
-        system_prompt = """You are a helpful AI assistant powered by Knowledge Engine.
-Answer questions based on the provided context. Be concise and accurate.
-If the context doesn't contain relevant information, say so."""
-
-        # Build messages for LLM
-        messages = [{"role": "system", "content": system_prompt}]
-
-        # Add history
-        for h in history[-5:]:  # Last 5 messages
-            messages.append({"role": h["role"], "content": h["content"]})
-
-        # Add current message with context
-        user_message = f"""Context from knowledge base:
-{context}
-
-User question: {message}
-
-Please answer based on the context above. If the context is not relevant, answer based on your knowledge."""
-
-        messages.append({"role": "user", "content": user_message})
-
-        # Send initial sources as SSE event
+        # Send sources
         yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n"
 
-        # Try to use LLM client for streaming
-        try:
-            from ke.llm.client import LLMClient
+        # Generate response
+        from ke.llm.client import LLMClient
+        llm = LLMClient()
 
-            llm = LLMClient()
+        if llm.is_available():
+            import asyncio
 
-            if llm.is_available():
-                # Stream response from LLM
-                # Note: Current LLMClient doesn't support streaming
-                # This is a placeholder for when streaming is implemented
-                response = await asyncio.to_thread(
-                    llm.complete_with_system,
-                    system_prompt,
-                    user_message,
-                )
+            system_prompt = """You are a helpful AI assistant powered by Knowledge Engine."""
+            user_message = f"Context:\n{context}\n\nQuestion: {message}"
 
-                # Simulate streaming by sending tokens one by one
-                words = response.split()
-                for i, word in enumerate(words):
-                    token = word + " " if i < len(words) - 1 else word
-                    yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
-                    await asyncio.sleep(0.02)  # Small delay for streaming effect
-            else:
-                # Fallback: Generate response based on context
-                response = generate_response_from_context(message, context, history)
-                words = response.split()
-                for i, word in enumerate(words):
-                    token = word + " " if i < len(words) - 1 else word
-                    yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
-                    await asyncio.sleep(0.02)
+            response = await asyncio.to_thread(
+                llm.complete_with_system,
+                system_prompt,
+                user_message,
+            )
 
-        except Exception as e:
+            # Stream tokens
+            words = response.split()
+            for i, word in enumerate(words):
+                token = word + " " if i < len(words) - 1 else word
+                yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+                await asyncio.sleep(0.02)
+        else:
             # Fallback response
-            response = f"I found relevant information in the knowledge base, but I'm having trouble generating a response. Here's what I found:\n\n{context[:500]}..."
+            response = f"Based on the knowledge base:\n\n{context[:500]}..."
             words = response.split()
             for word in words:
                 yield f"data: {json.dumps({'type': 'token', 'data': word + ' '})}\n\n"
-                await asyncio.sleep(0.02)
 
-        # Send completion event
         yield f"data: {json.dumps({'type': 'done', 'data': ''})}\n\n"
 
     finally:
         query_service.close()
-
-
-def generate_response_from_context(
-    query: str,
-    context: str,
-    history: list[dict],
-) -> str:
-    """Generate a response based on context when LLM is not available."""
-    # Simple template-based response
-    if "no relevant context" in context.lower():
-        return f"I don't have specific information about '{query}' in my knowledge base. Could you provide more details or try a different query?"
-
-    response = f"Based on the knowledge base, here's what I found about your question:\n\n"
-
-    # Extract relevant parts from context
-    context_parts = context.split("[Source:")
-    for part in context_parts[1:3]:  # Top 2 sources
-        source_end = part.find("]")
-        if source_end != -1:
-            source_name = part[:source_end].strip()
-            source_content = part[source_end + 1:].strip()[:300]
-            response += f"**From {source_name}:**\n{source_content}...\n\n"
-
-    return response
 
 
 # ============================================================================
@@ -179,29 +150,47 @@ async def chat(request: ChatRequest):
     # Collect streamed response
     full_response = ""
     sources = []
+    intent = None
 
-    async for event in stream_tokens(request.message, history, request.session_id):
-        if event.startswith("data: "):
-            data = json.loads(event[6:])
-            if data["type"] == "token":
-                full_response += data["data"]
-            elif data["type"] == "sources":
-                sources = data["data"]
+    try:
+        async for event in stream_with_cognitive_engine(
+            request.message, history, request.session_id
+        ):
+            if event.startswith("data: "):
+                data = json.loads(event[6:])
+                if data["type"] == "token":
+                    full_response += data["data"]
+                elif data["type"] == "sources":
+                    sources = data["data"]
+                elif data["type"] == "intent":
+                    intent = data["data"].get("type") if isinstance(data["data"], dict) else None
+    except Exception:
+        # Fallback to legacy streaming
+        async for event in stream_tokens_legacy(
+            request.message, history, request.session_id
+        ):
+            if event.startswith("data: "):
+                data = json.loads(event[6:])
+                if data["type"] == "token":
+                    full_response += data["data"]
+                elif data["type"] == "sources":
+                    sources = data["data"]
 
     return ChatResponse(
         response=full_response,
         sources=sources,
         session_id=request.session_id or "default",
+        intent=intent,
     )
 
 
 @router.post("/stream")
 async def chat_stream(request: ChatRequest):
-    """Chat with the knowledge base (streaming SSE)."""
+    """Chat with the knowledge base (streaming SSE with Cognitive Engine)."""
     history = [msg.model_dump() for msg in request.history]
 
     return StreamingResponse(
-        stream_tokens(request.message, history, request.session_id),
+        stream_with_cognitive_engine(request.message, history, request.session_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
