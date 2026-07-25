@@ -15,8 +15,8 @@ struct LoginView: View {
                     Image(systemName: "brain.head.profile")
                         .font(.system(size: 60))
                         .foregroundColor(.blue)
-                    
-                    Text("Knowledge Engine")
+
+                    Text("Wcore X")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     

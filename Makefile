@@ -107,7 +107,7 @@ test: ## Run all tests
 
 # Build unsigned IPA (requires macOS with Xcode)
 build-ipa: ## Build unsigned IPA for iOS (macOS only)
-	@echo "Building unsigned IPA for KEApp..."
+	@echo "Building unsigned IPA for Wcore X..."
 	@echo "Creating symlink for Xcode path resolution..."
 	@ln -sf $(CURDIR)/ios-app/KEApp $(CURDIR)/KEApp
 	@cd ios-app && swift package resolve
@@ -116,14 +116,14 @@ build-ipa: ## Build unsigned IPA for iOS (macOS only)
 		-scheme KEApp \
 		-destination 'generic/platform=iOS' \
 		-configuration Release \
-		-archivePath $(CURDIR)/build/ios/KEApp.xcarchive \
+		-archivePath $(CURDIR)/build/ios/WcoreX.xcarchive \
 		CODE_SIGNING_ALLOWED=NO \
 		CODE_SIGNING_REQUIRED=NO \
 		CODE_SIGN_IDENTITY="" \
 		archive
-	@cd build/ios && mkdir -p Payload && cp -r KEApp.xcarchive/Products/Applications/KEApp.app Payload/
-	@cd build/ios && zip -r KEApp.ipa Payload
-	@echo "IPA built successfully: build/ios/KEApp.ipa"
+	@cd build/ios && mkdir -p Payload && cp -r WcoreX.xcarchive/Products/Applications/KEApp.app Payload/
+	@cd build/ios && zip -r WcoreX.ipa Payload
+	@echo "IPA built successfully: build/ios/WcoreX.ipa"
 
 # ============================================================
 # Deployment Commands

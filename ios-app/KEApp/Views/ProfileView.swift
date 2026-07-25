@@ -84,7 +84,7 @@ struct ProfileView: View {
                     }
                     
                     HStack {
-                        Text("Knowledge Engine")
+                        Text("Wcore X")
                         Spacer()
                         Text("iOS App")
                             .foregroundColor(.secondary)

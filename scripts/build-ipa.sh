@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Build unsigned IPA for KEApp
+# Build unsigned IPA for Wcore X
 # Requirements: macOS with Xcode installed
 # ============================================================
 
@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_NAME="KEApp"
+APP_NAME="WcoreX"
 SCHEME="KEApp"
 BUILD_DIR="build/ios"
 ARCHIVE_PATH="${BUILD_DIR}/${APP_NAME}.xcarchive"
@@ -21,7 +21,7 @@ IPA_PATH="${BUILD_DIR}/${APP_NAME}.ipa"
 IOS_DIR="ios-app"
 
 echo -e "${YELLOW}========================================${NC}"
-echo -e "${YELLOW}  Building unsigned IPA for ${APP_NAME}${NC}"
+echo -e "${YELLOW}  Building unsigned IPA for Wcore X${NC}"
 echo -e "${YELLOW}========================================${NC}"
 
 # Check if running on macOS
@@ -57,8 +57,8 @@ mkdir -p "${BUILD_DIR}"
 echo -e "${YELLOW}[2/7] Creating symlink for Xcode path resolution...${NC}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-ln -sf "${PROJECT_DIR}/${IOS_DIR}/${APP_NAME}" "${PROJECT_DIR}/${APP_NAME}"
-echo -e "  Symlink created: ${PROJECT_DIR}/${APP_NAME} -> ${PROJECT_DIR}/${IOS_DIR}/${APP_NAME}"
+ln -sf "${PROJECT_DIR}/${IOS_DIR}/KEApp" "${PROJECT_DIR}/KEApp"
+echo -e "  Symlink created: ${PROJECT_DIR}/KEApp -> ${PROJECT_DIR}/${IOS_DIR}/KEApp"
 
 # Resolve SPM dependencies
 echo -e "${YELLOW}[3/7] Resolving SPM dependencies...${NC}"
@@ -69,7 +69,7 @@ cd ..
 # Build archive with verbose output
 echo -e "${YELLOW}[4/7] Building Xcode archive (this may take a while)...${NC}"
 cd "${IOS_DIR}"
-xcodebuild -project "${APP_NAME}.xcodeproj" \
+xcodebuild -project "KEApp.xcodeproj" \
     -scheme "${SCHEME}" \
     -destination 'generic/platform=iOS' \
     -configuration Release \
@@ -88,10 +88,10 @@ if [ ! -d "${ARCHIVE_PATH}" ]; then
     exit 1
 fi
 
-# Check if .app exists in archive
-APP_PATH="${ARCHIVE_PATH}/Products/Applications/${APP_NAME}.app"
+# Check if .app exists in archive (app binary name is still KEApp)
+APP_PATH="${ARCHIVE_PATH}/Products/Applications/KEApp.app"
 if [ ! -d "${APP_PATH}" ]; then
-    echo -e "${RED}Error: ${APP_NAME}.app not found in archive${NC}"
+    echo -e "${RED}Error: KEApp.app not found in archive${NC}"
     echo -e "${YELLOW}Archive contents:${NC}"
     ls -la "${ARCHIVE_PATH}/Products/Applications/" 2>/dev/null || echo "No Applications directory"
     exit 1

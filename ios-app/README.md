@@ -1,10 +1,10 @@
-# KE App - iOS
+# Wcore X - iOS
 
-iOS client for Knowledge Engine AI.
+iOS client for Wcore X - AI-powered Knowledge Management.
 
 ## Features
 
-- **Knowledge Search**: Search through your knowledge base with multiple modes
+- **Knowledge Search**: Search through your knowledge base with multiple modes (semantic, keyword, hybrid)
 - **AI Chat**: Interactive chat with RAG (Retrieval-Augmented Generation)
 - **Cloud Sync**: Sync knowledge to ChromaDB Cloud
 - **User Accounts**: Authentication and profile management
@@ -29,8 +29,6 @@ KEApp/
 ├── KEApp.swift              # App entry point
 ├── Models/
 │   └── AppState.swift       # Data models
-├── ViewModels/
-│   └── (ViewModel files)
 ├── Views/
 │   ├── ContentView.swift    # Main view
 │   ├── LoginView.swift      # Authentication
@@ -39,10 +37,10 @@ KEApp/
 │   ├── ChatView.swift       # AI chat
 │   └── ProfileView.swift    # User profile
 ├── Services/
-│   ├── APIService.swift     # API client
+│   ├── APIService.swift     # API client (ChromaDB connected)
 │   └── AuthManager.swift    # Authentication
-└── Utils/
-    └── (Utility files)
+└── Resources/
+    └── Assets.xcassets      # App icons and images
 ```
 
 ## Setup
@@ -50,6 +48,18 @@ KEApp/
 1. Open `KEApp.xcodeproj` in Xcode
 2. Select your development team
 3. Build and run
+
+## API Configuration
+
+The app connects to the Wcore X backend server. Configure the server URL in `APIService.swift`:
+
+```swift
+// Debug mode (local development)
+static let apiBaseURL = "http://localhost:8000"
+
+// Release mode (production)
+static let apiBaseURL = "https://api.wcorex.com"
+```
 
 ## CI/CD
 
@@ -67,38 +77,23 @@ This project uses Codemagic for CI/CD.
 
 ### Workflows
 
-- **ke-app-ios**: Build on push to main/develop
-- **ke-app-ios-testflight**: Deploy to TestFlight on tag push (v*)
-
-## Environment Variables
-
-Set these in Codemagic UI under Teams > apple_credentials:
-
-| Variable | Description |
-|----------|-------------|
-| `APPLE_TEAM_ID` | Apple Developer Team ID |
-| `APPLE_CONNECT_API_KEY_ID` | App Store Connect API Key ID |
-| `APPLE_CONNECT_API_ISSUER_ID` | App Store Connect API Issuer ID |
-| `APPLE_CONNECT_API_KEY` | Private key (PEM format) |
+- **ke-app-ios**: Build unsigned IPA on push to main/develop
 
 ## Building
 
 ```bash
-# Install dependencies
-cd ios && pod install
+# Build unsigned IPA (requires macOS with Xcode)
+make build-ipa
 
-# Build
-xcodebuild -workspace KEApp.xcworkspace \
-  -scheme KEApp \
-  -sdk iphoneos \
-  -configuration Release
+# Or use the script directly
+./scripts/build-ipa.sh
 ```
 
 ## Testing
 
 ```bash
 xcodebuild test \
-  -workspace KEApp.xcworkspace \
+  -project KEApp.xcodeproj \
   -scheme KEApp \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```

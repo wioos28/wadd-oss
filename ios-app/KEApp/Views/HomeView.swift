@@ -26,7 +26,7 @@ struct HomeView: View {
                     .padding(.horizontal)
                 }
             }
-            .navigationTitle("Knowledge Engine")
+            .navigationTitle("Wcore X")
             .task {
                 await viewModel.loadData()
             }

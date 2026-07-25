@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "KEApp",
+    name: "WcoreX",
     platforms: [
         .iOS(.v17),
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "KEApp",
-            targets: ["KEApp"]
+            name: "WcoreX",
+            targets: ["WcoreX"]
         ),
     ],
     dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "KEApp",
+            name: "WcoreX",
             dependencies: [],
             path: "KEApp"
         ),

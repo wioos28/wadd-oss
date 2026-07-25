@@ -37,7 +37,7 @@ workflows:
             -scheme KEApp \
             -destination 'generic/platform=iOS' \
             -configuration Release \
-            -archivePath $HOME/build/KEApp.xcarchive \
+            -archivePath $HOME/build/WcoreX.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -48,8 +48,8 @@ workflows:
           echo "Creating Payload folder and zipping into IPA..."
           cd $HOME/build
           mkdir -p Payload
-          cp -r KEApp.xcarchive/Products/Applications/KEApp.app Payload/
-          zip -r KEApp.ipa Payload
+          cp -r WcoreX.xcarchive/Products/Applications/KEApp.app Payload/
+          zip -r WcoreX.ipa Payload
 
     artifacts:
-      - $HOME/build/KEApp.ipa
+      - $HOME/build/WcoreX.ipa
