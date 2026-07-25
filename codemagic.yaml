@@ -1,11 +1,8 @@
 workflows:
   ke-app-ios:
     name: Build Unsigned IPA Wcore X
-    max_build_duration: 60
+    max_build_duration: 30
     instance_type: mac_mini_m1
-
-    # Set working directory to ios-app
-    working_directory: ios-app
 
     environment:
       xcode: latest
@@ -21,8 +18,13 @@ workflows:
       cancel_previous_builds: true
 
     scripts:
-      - name: Install dependencies (SPM)
+      - name: Fix paths & Install dependencies
         script: |
+          echo "Fixing file path mismatch..."
+          # Tạo đường dẫn liên kết để Xcode tìm thấy file
+          ln -sf $CM_BUILD_DIR/ios-app/KEApp $CM_BUILD_DIR/KEApp
+
+          cd ios-app
           echo "Resolving Swift Package Manager dependencies..."
           swift package resolve
 
@@ -30,6 +32,7 @@ workflows:
         script: |
           echo "Building Xcode Archive without code signing..."
           mkdir -p $HOME/build
+          cd ios-app
           xcodebuild -project KEApp.xcodeproj \
             -scheme KEApp \
             -destination 'generic/platform=iOS' \

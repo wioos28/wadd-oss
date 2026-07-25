@@ -108,6 +108,8 @@ test: ## Run all tests
 # Build unsigned IPA (requires macOS with Xcode)
 build-ipa: ## Build unsigned IPA for iOS (macOS only)
 	@echo "Building unsigned IPA for KEApp..."
+	@echo "Creating symlink for Xcode path resolution..."
+	@ln -sf $(CURDIR)/ios-app/KEApp $(CURDIR)/KEApp
 	@cd ios-app && swift package resolve
 	@mkdir -p build/ios
 	@cd ios-app && xcodebuild -project KEApp.xcodeproj \

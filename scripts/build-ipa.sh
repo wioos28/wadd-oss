@@ -49,18 +49,25 @@ if [ ! -d "${IOS_DIR}/${APP_NAME}.xcodeproj" ]; then
 fi
 
 # Clean previous builds
-echo -e "${YELLOW}[1/6] Cleaning previous builds...${NC}"
+echo -e "${YELLOW}[1/7] Cleaning previous builds...${NC}"
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
 
+# Create symlink for Xcode path resolution
+echo -e "${YELLOW}[2/7] Creating symlink for Xcode path resolution...${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+ln -sf "${PROJECT_DIR}/${IOS_DIR}/${APP_NAME}" "${PROJECT_DIR}/${APP_NAME}"
+echo -e "  Symlink created: ${PROJECT_DIR}/${APP_NAME} -> ${PROJECT_DIR}/${IOS_DIR}/${APP_NAME}"
+
 # Resolve SPM dependencies
-echo -e "${YELLOW}[2/6] Resolving SPM dependencies...${NC}"
+echo -e "${YELLOW}[3/7] Resolving SPM dependencies...${NC}"
 cd "${IOS_DIR}"
 swift package resolve
 cd ..
 
 # Build archive with verbose output
-echo -e "${YELLOW}[3/6] Building Xcode archive (this may take a while)...${NC}"
+echo -e "${YELLOW}[4/7] Building Xcode archive (this may take a while)...${NC}"
 cd "${IOS_DIR}"
 xcodebuild -project "${APP_NAME}.xcodeproj" \
     -scheme "${SCHEME}" \
@@ -91,7 +98,7 @@ if [ ! -d "${APP_PATH}" ]; then
 fi
 
 # Check .app size
-echo -e "${YELLOW}[4/6] Checking .app bundle...${NC}"
+echo -e "${YELLOW}[5/7] Checking .app bundle...${NC}"
 APP_SIZE=$(du -sh "${APP_PATH}" | cut -f1)
 echo -e "  .app bundle size: ${APP_SIZE}"
 
@@ -107,14 +114,14 @@ else
 fi
 
 # Create Payload directory
-echo -e "${YELLOW}[5/6] Creating IPA payload...${NC}"
+echo -e "${YELLOW}[6/7] Creating IPA payload...${NC}"
 cd "${BUILD_DIR}"
 rm -rf Payload
 mkdir -p Payload
 cp -r "${APP_NAME}.xcarchive/Products/Applications/${APP_NAME}.app" Payload/
 
 # Create IPA
-echo -e "${YELLOW}[6/6] Packaging IPA...${NC}"
+echo -e "${YELLOW}[7/7] Packaging IPA...${NC}"
 rm -f "${APP_NAME}.ipa"
 zip -r "${APP_NAME}.ipa" Payload
 rm -rf Payload
