@@ -46,6 +46,15 @@ class PipelineConfig(BaseModel):
     internet_requires_permission: bool = True
 
 
+class ChromaDBCloudConfig(BaseModel):
+    enabled: bool = False
+    api_key: str = ""
+    tenant: str = ""
+    database: str = ""
+    collection_knowledge: str = "knowledge"
+    collection_chat: str = "chat_history"
+
+
 class SyncConfig(BaseModel):
     provider: str = "local"  # local | s3 | gcs | custom
     remote_url: str = ""
@@ -71,6 +80,7 @@ class KeConfig(BaseModel):
     query: PipelineConfig = Field(default_factory=PipelineConfig)
     sync: SyncConfig = Field(default_factory=SyncConfig)
     network: NetworkConfig = Field(default_factory=NetworkConfig)
+    chromadb_cloud: ChromaDBCloudConfig = Field(default_factory=ChromaDBCloudConfig)
 
     def data_dir_path(self) -> Path:
         return Path(self.engine.data_dir).expanduser()

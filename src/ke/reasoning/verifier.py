@@ -180,7 +180,7 @@ class Verifier:
 
         # If one has negation and they share most other words
         if has_neg1 != has_neg2:
-            shared = words1 & words2 - negations
+            shared = (words1 & words2) - negations
             if len(shared) > min(len(words1), len(words2)) * 0.5:
                 return True
 

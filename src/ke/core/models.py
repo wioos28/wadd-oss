@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -25,7 +25,7 @@ class NetworkState(BaseModel):
     interfaces: list[str] = Field(default_factory=list, description="Active network interfaces")
     latency_ms: float | None = Field(default=None, description="Measured latency in ms")
     bandwidth_mbps: float | None = Field(default=None, description="Estimated bandwidth in Mbps")
-    last_checked: datetime = Field(default_factory=datetime.utcnow)
+    last_checked: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class Relationship(BaseModel):
@@ -35,7 +35,7 @@ class Relationship(BaseModel):
     target_id: str
     relationship_type: str = Field(description="e.g., related_to, derived_from, contradicts, supports")
     weight: float = Field(default=1.0, ge=0.0, le=1.0, description="Strength of relationship")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class KnowledgeEntry(BaseModel):
@@ -51,8 +51,8 @@ class KnowledgeEntry(BaseModel):
     relationships: list[Relationship] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     embedding_id: str | None = Field(default=None, description="Reference to vector store entry")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class QueryResult(BaseModel):

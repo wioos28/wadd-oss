@@ -9,6 +9,11 @@ from typing import Any
 import requests
 
 
+class LLMError(Exception):
+    """Exception raised when LLM call fails."""
+    pass
+
+
 class LLMClient:
     """Client for calling OpenAI-compatible LLM APIs."""
 
@@ -54,9 +59,9 @@ class LLMClient:
             data = response.json()
             return data["choices"][0]["message"]["content"]
         except requests.exceptions.RequestException as e:
-            return f"Error calling LLM: {e}"
+            raise LLMError(f"LLM request failed: {e}") from e
         except (KeyError, IndexError) as e:
-            return f"Error parsing LLM response: {e}"
+            raise LLMError(f"Invalid LLM response format: {e}") from e
 
     def complete(self, prompt: str, **kwargs: Any) -> str:
         """Simple completion using a single prompt."""

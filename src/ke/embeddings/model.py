@@ -45,9 +45,11 @@ class EmbeddingModel:
         embeddings = model.encode([text1, text2], show_progress_bar=False)
         import numpy as np
 
-        similarity = np.dot(embeddings[0], embeddings[1]) / (
-            np.linalg.norm(embeddings[0]) * np.linalg.norm(embeddings[1])
-        )
+        norm1 = np.linalg.norm(embeddings[0])
+        norm2 = np.linalg.norm(embeddings[1])
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+        similarity = np.dot(embeddings[0], embeddings[1]) / (norm1 * norm2)
         return float(similarity)
 
     @property

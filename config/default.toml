@@ -37,3 +37,11 @@ remote_url = ""
 check_interval = 30
 probes = ["dns", "http"]
 quality_threshold_latency_ms = 500.0
+
+[chromadb_cloud]
+enabled = false
+api_key = ""
+tenant = ""
+database = ""
+collection_knowledge = "knowledge"
+collection_chat = "chat_history"

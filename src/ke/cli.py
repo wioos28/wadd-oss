@@ -401,7 +401,7 @@ def learn(
     config = get_config()
 
     with QueryPipeline(config) as pipeline:
-        learner = KnowledgeLearner(pipeline.metadata_store, pipeline.embedding_model)
+        learner = KnowledgeLearner(pipeline.metadata_store, pipeline.embedding_model, pipeline.vector_store)
         entry = learner.learn_from_task(task, result, tags=tag)
 
         console.print(Panel(
@@ -518,6 +518,322 @@ def ask_chat(
                 break
             except EOFError:
                 break
+
+
+@app.command()
+def chat_history(
+    session_id: Optional[str] = typer.Option(None, help="Filter by session ID"),
+    limit: int = typer.Option(20, help="Number of messages to show"),
+) -> None:
+    """Show chat history from cloud storage."""
+    from ke.config import load_config
+    from ke.storage.chat_history import ChatHistoryStore
+
+    config = load_config()
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured. Set chromadb_cloud.enabled=true in config.[/]")
+        raise typer.Exit(1)
+
+    with ChatHistoryStore(config.chromadb_cloud) as store:
+        if session_id:
+            messages = store.get_session_history(session_id)
+        else:
+            messages = store.get_recent_messages(limit)
+
+        if not messages:
+            console.print("[yellow]No chat history found.[/]")
+            return
+
+        console.print(f"\n[bold]Chat History ({len(messages)} messages):[/]\n")
+
+        for msg in messages:
+            role_style = "cyan" if msg.role == "user" else "green"
+            console.print(f"[bold {role_style}]{msg.role}:[/] {msg.content[:200]}")
+            if len(msg.content) > 200:
+                console.print("...")
+            console.print(f"[dim]Session: {msg.session_id} | Turn: {msg.turn} | {msg.timestamp}[/]\n")
+
+
+@app.command()
+def chat_delete(
+    session_id: str = typer.Argument(help="Session ID to delete"),
+    confirm: bool = typer.Option(True, help="Confirm deletion"),
+) -> None:
+    """Delete chat history for a session."""
+    from ke.config import load_config
+    from ke.storage.chat_history import ChatHistoryStore
+
+    config = load_config()
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured.[/]")
+        raise typer.Exit(1)
+
+    with ChatHistoryStore(config.chromadb_cloud) as store:
+        if confirm:
+            count = store.count()
+            console.print(f"[yellow]This will delete all messages in session {session_id}[/]")
+            response = console.input("[bold]Continue? (y/n): [/]").strip().lower()
+            if response != "y":
+                console.print("[dim]Cancelled.[/]")
+                return
+
+        store.delete_session(session_id)
+        console.print(f"[green]Deleted session {session_id}[/]")
+
+
+@app.command()
+def account_create(
+    username: str = typer.Argument(help="Username"),
+    email: str = typer.Argument(help="Email address"),
+    password: str = typer.Option(..., prompt=True, hide_input=True, help="Password"),
+) -> None:
+    """Create a new user account."""
+    from ke.config import load_config
+    from ke.storage.accounts import AccountStore
+
+    config = load_config()
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured.[/]")
+        raise typer.Exit(1)
+
+    with AccountStore(config.chromadb_cloud) as store:
+        try:
+            account = store.create_account(username, email, password)
+            console.print(Panel(
+                f"[green]Account created![/]\n\n"
+                f"User ID: {account.user_id}\n"
+                f"Username: {account.username}\n"
+                f"Email: {account.email}\n"
+                f"Created: {account.created_at.isoformat()}",
+                title="Account Created",
+            ))
+        except ValueError as e:
+            console.print(f"[red]Error: {e}[/]")
+            raise typer.Exit(1)
+
+
+@app.command()
+def account_login(
+    username: str = typer.Argument(help="Username"),
+    password: str = typer.Option(..., prompt=True, hide_input=True, help="Password"),
+) -> None:
+    """Login to user account."""
+    from ke.config import load_config
+    from ke.storage.accounts import AccountStore
+
+    config = load_config()
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured.[/]")
+        raise typer.Exit(1)
+
+    with AccountStore(config.chromadb_cloud) as store:
+        account = store.authenticate(username, password)
+        if account:
+            console.print(Panel(
+                f"[green]Login successful![/]\n\n"
+                f"User ID: {account.user_id}\n"
+                f"Username: {account.username}\n"
+                f"Email: {account.email}",
+                title="Welcome",
+            ))
+        else:
+            console.print("[red]Invalid username or password.[/]")
+            raise typer.Exit(1)
+
+
+@app.command()
+def account_show(
+    user_id: str = typer.Argument(help="User ID"),
+) -> None:
+    """Show user account details."""
+    from ke.config import load_config
+    from ke.storage.accounts import AccountStore
+
+    config = load_config()
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured.[/]")
+        raise typer.Exit(1)
+
+    with AccountStore(config.chromadb_cloud) as store:
+        account = store.get_by_id(user_id)
+        if not account:
+            console.print(f"[red]Account not found: {user_id}[/]")
+            raise typer.Exit(1)
+
+        console.print(Panel(
+            f"User ID: {account.user_id}\n"
+            f"Username: {account.username}\n"
+            f"Email: {account.email}\n"
+            f"Created: {account.created_at.isoformat()}",
+            title="Account Details",
+        ))
+
+
+@app.command()
+def account_list(
+    limit: int = typer.Option(20, help="Maximum accounts to show"),
+) -> None:
+    """List all user accounts."""
+    from ke.config import load_config
+    from ke.storage.accounts import AccountStore
+
+    config = load_config()
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured.[/]")
+        raise typer.Exit(1)
+
+    with AccountStore(config.chromadb_cloud) as store:
+        accounts = store.list_accounts(limit=limit)
+        total = store.count()
+
+        if not accounts:
+            console.print("[yellow]No accounts found.[/]")
+            return
+
+        table = Table(title=f"User Accounts ({len(accounts)}/{total})")
+        table.add_column("User ID", style="cyan", max_width=12)
+        table.add_column("Username", style="green")
+        table.add_column("Email")
+        table.add_column("Created", style="dim")
+
+        for account in accounts:
+            table.add_row(
+                account.user_id[:12],
+                account.username,
+                account.email,
+                account.created_at.strftime("%Y-%m-%d %H:%M") if account.created_at else "N/A",
+            )
+
+        console.print(table)
+
+
+@app.command()
+def account_delete(
+    user_id: str = typer.Argument(help="User ID to delete"),
+    confirm: bool = typer.Option(True, help="Confirm deletion"),
+) -> None:
+    """Delete user account."""
+    from ke.config import load_config
+    from ke.storage.accounts import AccountStore
+
+    config = load_config()
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured.[/]")
+        raise typer.Exit(1)
+
+    with AccountStore(config.chromadb_cloud) as store:
+        account = store.get_by_id(user_id)
+        if not account:
+            console.print(f"[red]Account not found: {user_id}[/]")
+            raise typer.Exit(1)
+
+        if confirm:
+            console.print(f"[yellow]This will delete account: {account.username} ({account.email})[/]")
+            response = console.input("[bold]Continue? (y/n): [/]").strip().lower()
+            if response != "y":
+                console.print("[dim]Cancelled.[/]")
+                return
+
+        store.delete_account(user_id)
+        console.print(f"[green]Deleted account {account.username}[/]")
+
+
+@app.command()
+def cloud_status() -> None:
+    """Show ChromaDB Cloud status."""
+    from ke.config import load_config
+    from ke.storage.cloud import CloudVectorStore
+    from ke.storage.chat_history import ChatHistoryStore
+
+    config = load_config()
+
+    if not config.chromadb_cloud.enabled:
+        console.print(Panel.fit(
+            "[bold]ChromaDB Cloud Status[/]\n\n"
+            "Status: [red]Disabled[/]\n\n"
+            "To enable, add to ~/.knowledge-engine/config.toml:\n"
+            "[chromadb_cloud]\n"
+            'enabled = true\n'
+            'api_key = "your-api-key"\n'
+            'tenant = "your-tenant-id"\n'
+            'database = "your-database"',
+            title="Cloud Status",
+        ))
+        return
+
+    try:
+        with CloudVectorStore(config.chromadb_cloud) as cloud:
+            knowledge_count = cloud.count()
+
+        with ChatHistoryStore(config.chromadb_cloud) as chat:
+            chat_count = chat.count()
+
+        console.print(Panel.fit(
+            f"[bold]ChromaDB Cloud Status[/]\n\n"
+            f"Status: [green]Connected[/]\n"
+            f"Tenant: {config.chromadb_cloud.tenant}\n"
+            f"Database: {config.chromadb_cloud.database}\n\n"
+            f"[bold]Collections:[/]\n"
+            f"  Knowledge: {knowledge_count} entries\n"
+            f"  Chat History: {chat_count} messages",
+            title="Cloud Status",
+        ))
+    except Exception as e:
+        console.print(Panel.fit(
+            f"[bold]ChromaDB Cloud Status[/]\n\n"
+            f"Status: [red]Error[/]\n"
+            f"Error: {e}",
+            title="Cloud Status",
+        ))
+
+
+@app.command()
+def cloud_sync(
+    dry_run: bool = typer.Option(False, help="Show what would be synced"),
+    batch_size: int = typer.Option(250, help="Batch size for upload (max 250 due to quota)"),
+) -> None:
+    """Sync local data to ChromaDB Cloud."""
+    from ke.config import load_config
+    from ke.core.pipeline import QueryPipeline
+    from ke.storage.cloud import CloudVectorStore
+
+    config = load_config()
+
+    if not config.chromadb_cloud.enabled:
+        console.print("[red]ChromaDB Cloud not configured.[/]")
+        raise typer.Exit(1)
+
+    with QueryPipeline(config) as pipeline:
+        with CloudVectorStore(config.chromadb_cloud) as cloud:
+            # Get all local entries
+            entries = pipeline.metadata_store.list_entries(limit=10000)
+
+            if not entries:
+                console.print("[yellow]No local entries to sync.[/]")
+                return
+
+            console.print(f"[bold]Found {len(entries)} entries to sync[/]")
+
+            if dry_run:
+                console.print("[dim]Dry run - no changes made[/]")
+                for entry in entries[:10]:
+                    console.print(f"  - {entry.id}: {entry.content[:50]}...")
+                if len(entries) > 10:
+                    console.print(f"  ... and {len(entries) - 10} more")
+                return
+
+            # Sync in batches
+            total_synced = 0
+            with console.status("[bold green]Syncing to cloud...") as status:
+                for i in range(0, len(entries), batch_size):
+                    batch = entries[i:i + batch_size]
+                    texts = [e.content for e in batch]
+                    embeddings = pipeline.embedding_model.embed_batch(texts)
+                    cloud.add_batch(batch, embeddings)
+                    total_synced += len(batch)
+                    status.update(f"[bold green]Synced {total_synced}/{len(entries)} entries...")
+
+            console.print(f"[green]Synced {total_synced} entries to cloud[/]")
 
 
 if __name__ == "__main__":

@@ -1,33 +1,55 @@
-"""ChromaDB vector store for embedding-based search."""
+"""ChromaDB Cloud vector store for distributed knowledge storage."""
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import Any
 
 import chromadb
-from chromadb.config import Settings
 
+from ke.config import ChromaDBCloudConfig
 from ke.core.models import KnowledgeEntry
 
 
-class VectorStore:
-    """ChromaDB-based vector storage for semantic search."""
+class CloudVectorStore:
+    """ChromaDB Cloud-based vector storage for semantic search."""
 
-    def __init__(self, db_path: Path | str, collection_name: str = "knowledge"):
-        self.db_path = Path(db_path)
-        self.db_path.mkdir(parents=True, exist_ok=True)
-        self.client = chromadb.PersistentClient(
-            path=str(self.db_path),
-            settings=Settings(anonymized_telemetry=False),
-        )
-        self.collection = self.client.get_or_create_collection(
-            name=collection_name,
-            metadata={"hnsw:space": "cosine"},
-        )
+    def __init__(self, config: ChromaDBCloudConfig):
+        self.config = config
+        self._client: chromadb.CloudClient | None = None
+        self._knowledge_collection: Any = None
+        self._chat_collection: Any = None
+
+    @property
+    def client(self) -> chromadb.CloudClient:
+        if self._client is None:
+            self._client = chromadb.CloudClient(
+                api_key=self.config.api_key,
+                tenant=self.config.tenant,
+                database=self.config.database,
+            )
+        return self._client
+
+    @property
+    def knowledge_collection(self):
+        if self._knowledge_collection is None:
+            self._knowledge_collection = self.client.get_or_create_collection(
+                name=self.config.collection_knowledge,
+                metadata={"hnsw:space": "cosine"},
+            )
+        return self._knowledge_collection
+
+    @property
+    def chat_collection(self):
+        if self._chat_collection is None:
+            self._chat_collection = self.client.get_or_create_collection(
+                name=self.config.collection_chat,
+                metadata={"hnsw:space": "cosine"},
+            )
+        return self._chat_collection
 
     def add_entry(self, entry: KnowledgeEntry, embedding: list[float]) -> None:
         """Store a knowledge entry with its embedding."""
-        self.collection.upsert(
+        self.knowledge_collection.upsert(
             ids=[entry.id],
             embeddings=[embedding],
             documents=[entry.content],
@@ -47,7 +69,7 @@ class VectorStore:
         """Batch insert entries with embeddings."""
         if not entries:
             return
-        self.collection.upsert(
+        self.knowledge_collection.upsert(
             ids=[e.id for e in entries],
             embeddings=embeddings,
             documents=[e.content for e in entries],
@@ -67,21 +89,28 @@ class VectorStore:
         where_document: dict | None = None,
     ) -> list[dict]:
         """Search for similar entries by embedding."""
+        count = self.knowledge_collection.count()
+        if count == 0:
+            return []
+
         kwargs: dict = {
             "query_embeddings": [query_embedding],
-            "n_results": min(n_results, self.collection.count() or 1),
+            "n_results": min(n_results, count),
         }
         if where:
             kwargs["where"] = where
         if where_document:
             kwargs["where_document"] = where_document
 
-        results = self.collection.query(**kwargs)
+        results = self.knowledge_collection.query(**kwargs)
         return self._format_results(results)
 
     def get_entry(self, entry_id: str) -> dict | None:
         """Get a specific entry by ID."""
-        results = self.collection.get(ids=[entry_id], include=["documents", "metadatas", "embeddings"])
+        results = self.knowledge_collection.get(
+            ids=[entry_id],
+            include=["documents", "metadatas", "embeddings"],
+        )
         if not results["ids"]:
             return None
         return {
@@ -93,11 +122,11 @@ class VectorStore:
 
     def delete_entry(self, entry_id: str) -> None:
         """Delete an entry from the vector store."""
-        self.collection.delete(ids=[entry_id])
+        self.knowledge_collection.delete(ids=[entry_id])
 
     def count(self) -> int:
         """Get total number of entries."""
-        return self.collection.count()
+        return self.knowledge_collection.count()
 
     def _format_results(self, results: dict) -> list[dict]:
         """Format ChromaDB results into a clean list."""
@@ -116,10 +145,11 @@ class VectorStore:
 
     def close(self) -> None:
         """Clean up resources."""
-        # ChromaDB persistent client doesn't need explicit close
-        pass
+        self._client = None
+        self._knowledge_collection = None
+        self._chat_collection = None
 
-    def __enter__(self) -> VectorStore:
+    def __enter__(self) -> CloudVectorStore:
         return self
 
     def __exit__(self, *args: object) -> None:

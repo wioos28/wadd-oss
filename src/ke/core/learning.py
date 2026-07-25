@@ -8,14 +8,16 @@ from datetime import UTC, datetime
 from ke.core.models import Confidence, KnowledgeEntry, Relationship
 from ke.embeddings.model import EmbeddingModel
 from ke.storage.metadata import MetadataStore
+from ke.storage.vector import VectorStore
 
 
 class KnowledgeLearner:
     """Extract and learn knowledge from tasks, documents, and conversations."""
 
-    def __init__(self, metadata_store: MetadataStore, embedding_model: EmbeddingModel):
+    def __init__(self, metadata_store: MetadataStore, embedding_model: EmbeddingModel, vector_store: VectorStore | None = None):
         self.metadata_store = metadata_store
         self.embedding_model = embedding_model
+        self.vector_store = vector_store
 
     def learn_from_task(
         self,
@@ -54,6 +56,10 @@ class KnowledgeLearner:
         embedding = self.embedding_model.embed(content)
         entry.embedding_id = entry.id
         self.metadata_store.add_entry(entry)
+
+        # Store embedding in vector store if available
+        if self.vector_store:
+            self.vector_store.add_entry(entry, embedding)
 
         return entry
 
@@ -191,7 +197,7 @@ class KnowledgeLearner:
 
         content_lower = content.lower()
         for pattern, tag in patterns:
-            if re.search(pattern, content, re.IGNORECASE):
+            if re.search(pattern, content_lower):
                 tags.add(tag)
 
         return list(tags)[:5]
@@ -249,4 +255,8 @@ class KnowledgeLearner:
 
         v1 = np.array(vec1)
         v2 = np.array(vec2)
-        return float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+        norm1 = np.linalg.norm(v1)
+        norm2 = np.linalg.norm(v2)
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+        return float(np.dot(v1, v2) / (norm1 * norm2))

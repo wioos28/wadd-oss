@@ -231,6 +231,12 @@ class MetadataStore:
         """Close the database connection."""
         self.conn.close()
 
+    def delete_entry(self, entry_id: str) -> None:
+        """Delete a knowledge entry and its relationships."""
+        with self.conn:
+            self.conn.execute("DELETE FROM relationships WHERE source_id = ? OR target_id = ?", (entry_id, entry_id))
+            self.conn.execute("DELETE FROM knowledge WHERE id = ?", (entry_id,))
+
     def __enter__(self) -> MetadataStore:
         return self
 

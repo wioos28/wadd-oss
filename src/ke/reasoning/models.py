@@ -35,7 +35,7 @@ class Intent(BaseModel):
     raw_input: str
     entities: dict[str, Any] = Field(default_factory=dict)
     keywords: list[str] = Field(default_factory=list)
-    detected_at: datetime = Field(default_factory=datetime.utcnow)
+    detected_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class PlanStep(BaseModel):
@@ -62,7 +62,7 @@ class ExecutionPlan(BaseModel):
     steps: list[PlanStep] = Field(default_factory=list)
     expected_result: str = ""
     verification_plan: list[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     completed_at: datetime | None = None
     status: str = "created"  # created | executing | completed | failed
 
@@ -75,7 +75,7 @@ class ReasoningChain(BaseModel):
     conclusion: str = ""
     confidence: float = 0.0
     sources: list[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class ReasoningStep(BaseModel):
@@ -111,7 +111,7 @@ class ReflectionResult(BaseModel):
     reusable_knowledge: list[str] = Field(default_factory=list)
     should_store: bool = True
     metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class ConfidenceScore(BaseModel):
@@ -149,4 +149,4 @@ class ReasoningResult(BaseModel):
     reflection: ReflectionResult | None = None
     sources_used: list[str] = Field(default_factory=list)
     processing_time_ms: float = 0.0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))

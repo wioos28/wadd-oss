@@ -21,6 +21,7 @@ from ke.retrieval.metadata_search import MetadataRetriever
 from ke.retrieval.relationship import RelationshipRetriever
 from ke.retrieval.semantic import SemanticRetriever
 from ke.storage.cache import LocalCache
+from ke.storage.cloud import CloudVectorStore
 from ke.storage.metadata import MetadataStore
 from ke.storage.vector import VectorStore
 
@@ -35,6 +36,11 @@ class QueryPipeline:
         self.metadata_store = MetadataStore(config.metadata_db_path())
         self.vector_store = VectorStore(config.vector_db_path())
         self.cache = LocalCache(config.cache_path())
+
+        # Initialize cloud storage if enabled
+        self.cloud_store: CloudVectorStore | None = None
+        if config.chromadb_cloud.enabled:
+            self.cloud_store = CloudVectorStore(config.chromadb_cloud)
 
         # Initialize embedding model (lazy loaded)
         self.embedding_model = EmbeddingModel(
@@ -67,11 +73,11 @@ class QueryPipeline:
 
         min_score = min_score or self.config.retrieval.min_score
 
-        # Check cache first
-        cache_key = f"query:{mode.value}:{text}:{limit}"
-        cached = self.cache.get(cache_key)
-        if cached:
-            return cached
+        # Check cache first (skip cache for now to avoid serialization issues)
+        # cache_key = f"query:{mode.value}:{text}:{limit}"
+        # cached = self.cache.get(cache_key)
+        # if cached:
+        #     return cached
 
         # Get query embedding
         query_embedding = self.embedding_model.embed(text)
@@ -79,8 +85,8 @@ class QueryPipeline:
         # Execute based on mode
         results = self._execute_query(text, query_embedding, mode, limit, min_score, **kwargs)
 
-        # Cache results
-        self.cache.set(cache_key, results)
+        # Cache results (skip for now)
+        # self.cache.set(cache_key, results)
 
         return results
 
@@ -160,10 +166,23 @@ class QueryPipeline:
                 all_results.append(r)
 
         # Layer 4: Cloud (if enabled and online)
-        if self.config.query.cloud_enabled:
+        if self.config.query.cloud_enabled and self.cloud_store:
             if network_state and network_state.status != "offline":
-                # Cloud search would go here
-                pass
+                try:
+                    cloud_results = self.cloud_store.search(query_embedding, n_results=limit)
+                    for r in cloud_results:
+                        entry = self.metadata_store.get_entry(r["id"])
+                        if entry and entry.id not in seen_ids:
+                            seen_ids.add(entry.id)
+                            distance = r.get("distance", 1.0)
+                            score = 1.0 - distance if distance is not None else 0.0
+                            all_results.append(QueryResult(
+                                entry=entry,
+                                score=score,
+                                retrieval_mode="cloud",
+                            ))
+                except Exception:
+                    pass  # Cloud search is best-effort
 
         # Layer 5: Internet (if enabled and user approved)
         if self.config.query.internet_enabled:
@@ -188,6 +207,13 @@ class QueryPipeline:
         # Store in vector DB
         self.vector_store.add_entry(entry, embedding)
 
+        # Store in cloud if enabled
+        if self.cloud_store:
+            try:
+                self.cloud_store.add_entry(entry, embedding)
+            except Exception:
+                pass  # Cloud sync is best-effort
+
         # Update entry with embedding ID
         entry.embedding_id = entry.id
         self.metadata_store.add_entry(entry)
@@ -208,6 +234,13 @@ class QueryPipeline:
         # Store in vector DB
         self.vector_store.add_batch(entries, embeddings)
 
+        # Store in cloud if enabled
+        if self.cloud_store:
+            try:
+                self.cloud_store.add_batch(entries, embeddings)
+            except Exception:
+                pass  # Cloud sync is best-effort
+
     def get_entry(self, entry_id: str) -> KnowledgeEntry | None:
         """Get a knowledge entry by ID."""
         return self.metadata_store.get_entry(entry_id)
@@ -226,6 +259,8 @@ class QueryPipeline:
         self.metadata_store.close()
         self.vector_store.close()
         self.cache.close()
+        if self.cloud_store:
+            self.cloud_store.close()
 
     def __enter__(self) -> QueryPipeline:
         return self
