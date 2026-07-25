@@ -1,7 +1,7 @@
 workflows:
   ke-app-ios:
-    name: Build Unsigned IPA Wcore X
-    max_build_duration: 30
+    name: Build Offline Wcore X IPA (With Embedded Model)
+    max_build_duration: 60
     instance_type: mac_mini_m1
 
     environment:
@@ -18,19 +18,34 @@ workflows:
       cancel_previous_builds: true
 
     scripts:
-      - name: Fix paths & Install dependencies
+      - name: Fix paths & Download AI Model
         script: |
-          echo "Fixing file path mismatch..."
-          # Tạo đường dẫn liên kết để Xcode tìm thấy file
+          echo "=== Fixing file path mismatch ==="
           ln -sf $CM_BUILD_DIR/ios-app/KEApp $CM_BUILD_DIR/KEApp
 
+          echo "=== Downloading Qwen2.5 0.5B Model ==="
+          mkdir -p ios-app/KEApp/Resources
+
+          # Tải model GGUF từ HuggingFace (~390MB)
+          curl -L -o ios-app/KEApp/Resources/model.gguf \
+            "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+
+          # Verify download
+          if [ -f ios-app/KEApp/Resources/model.gguf ]; then
+            echo "Model downloaded successfully!"
+            ls -lh ios-app/KEApp/Resources/model.gguf
+          else
+            echo "ERROR: Model download failed!"
+            exit 1
+          fi
+
           cd ios-app
-          echo "Resolving Swift Package Manager dependencies..."
+          echo "=== Resolving Swift Package Manager dependencies ==="
           swift package resolve
 
       - name: Build Archive (No Signing)
         script: |
-          echo "Building Xcode Archive without code signing..."
+          echo "=== Building Xcode Archive with Embedded AI Model ==="
           mkdir -p $HOME/build
           cd ios-app
           xcodebuild -project KEApp.xcodeproj \
@@ -43,13 +58,38 @@ workflows:
             CODE_SIGN_IDENTITY="" \
             archive
 
-      - name: Package Unsigned IPA
+      - name: Package Unsigned Standalone IPA
         script: |
-          echo "Creating Payload folder and zipping into IPA..."
+          echo "=== Packaging IPA with Embedded Model ==="
           cd $HOME/build
+
+          # Check archive exists
+          if [ ! -d "WcoreX.xcarchive" ]; then
+            echo "ERROR: Archive not found!"
+            exit 1
+          fi
+
+          # Check app exists
+          if [ ! -d "WcoreX.xcarchive/Products/Applications/KEApp.app" ]; then
+            echo "ERROR: App bundle not found in archive!"
+            exit 1
+          fi
+
           mkdir -p Payload
           cp -r WcoreX.xcarchive/Products/Applications/KEApp.app Payload/
-          zip -r WcoreX.ipa Payload
+
+          # Verify model is embedded
+          if [ -f "Payload/KEApp.app/Resources/model.gguf" ] || \
+             [ -f "Payload/KEApp.app/model.gguf" ]; then
+            echo "Model is embedded in app bundle!"
+          else
+            echo "WARNING: Model may not be embedded correctly"
+          fi
+
+          zip -r WcoreX-Offline.ipa Payload
+
+          # Show final IPA size
+          ls -lh WcoreX-Offline.ipa
 
     artifacts:
-      - $HOME/build/WcoreX.ipa
+      - $HOME/build/WcoreX-Offline.ipa

@@ -125,6 +125,41 @@ build-ipa: ## Build unsigned IPA for iOS (macOS only)
 	@cd build/ios && zip -r WcoreX.ipa Payload
 	@echo "IPA built successfully: build/ios/WcoreX.ipa"
 
+# Build offline IPA with embedded AI model (requires macOS with Xcode)
+build-ipa-offline: ## Build offline IPA with embedded AI model (macOS only)
+	@echo "=========================================="
+	@echo "  Building Offline Wcore X IPA"
+	@echo "  (with embedded Qwen2.5 0.5B model)"
+	@echo "=========================================="
+	@echo "[1/5] Creating symlink for Xcode path resolution..."
+	@ln -sf $(CURDIR)/ios-app/KEApp $(CURDIR)/KEApp
+	@echo "[2/5] Downloading AI model from HuggingFace (~390MB)..."
+	@mkdir -p ios-app/KEApp/Resources
+	@curl -L -o ios-app/KEApp/Resources/model.gguf \
+		"https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+	@ls -lh ios-app/KEApp/Resources/model.gguf
+	@echo "[3/5] Resolving SPM dependencies..."
+	@cd ios-app && swift package resolve
+	@echo "[4/5] Building Xcode archive..."
+	@mkdir -p build/ios
+	@cd ios-app && xcodebuild -project KEApp.xcodeproj \
+		-scheme KEApp \
+		-destination 'generic/platform=iOS' \
+		-configuration Release \
+		-archivePath $(CURDIR)/build/ios/WcoreX.xcarchive \
+		CODE_SIGNING_ALLOWED=NO \
+		CODE_SIGNING_REQUIRED=NO \
+		CODE_SIGN_IDENTITY="" \
+		archive
+	@echo "[5/5] Packaging offline IPA..."
+	@cd build/ios && mkdir -p Payload && cp -r WcoreX.xcarchive/Products/Applications/KEApp.app Payload/
+	@cd build/ios && zip -r WcoreX-Offline.ipa Payload
+	@echo "=========================================="
+	@echo "  Offline IPA built successfully!"
+	@echo "  Output: build/ios/WcoreX-Offline.ipa"
+	@ls -lh build/ios/WcoreX-Offline.ipa
+	@echo "=========================================="
+
 # ============================================================
 # Deployment Commands
 # ============================================================

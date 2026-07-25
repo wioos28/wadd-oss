@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Network
 
 // MARK: - Configuration
 struct AppConfig {
@@ -21,6 +22,11 @@ class APIService: ObservableObject {
     private let baseURL: String
     private let session: URLSession
     private var cancellables = Set<AnyCancellable>()
+    private let monitor = NWPathMonitor()
+    private let monitorQueue = DispatchQueue(label: "NetworkMonitor")
+
+    @Published var isOnline = true
+    @Published var offlineModeEnabled = true
 
     init(baseURL: String = AppConfig.apiBaseURL) {
         self.baseURL = baseURL
@@ -29,6 +35,72 @@ class APIService: ObservableObject {
         config.timeoutIntervalForRequest = 30
         config.waitsForConnectivity = true
         self.session = URLSession(configuration: config)
+
+        startNetworkMonitoring()
+    }
+
+    // MARK: - Network Monitoring
+    private func startNetworkMonitoring() {
+        monitor.pathUpdateHandler = { [weak self] path in
+            DispatchQueue.main.async {
+                self?.isOnline = path.status == .satisfied
+            }
+        }
+        monitor.start(queue: monitorQueue)
+    }
+
+    // MARK: - Smart Chat (Auto-switch Online/Offline)
+    func sendChatMessage(_ message: String, history: [[String: String]]) async throws -> String {
+        // Try online first
+        if isOnline {
+            do {
+                return try await sendChatOnline(message: message, history: history)
+            } catch {
+                // If server fails, fall back to offline
+                if offlineModeEnabled {
+                    return try await sendChatOffline(message: message, history: history)
+                }
+                throw error
+            }
+        }
+
+        // Offline mode
+        if offlineModeEnabled {
+            return try await sendChatOffline(message: message, history: history)
+        }
+
+        throw APIError.serverUnavailable
+    }
+
+    // MARK: - Online Chat (Server)
+    private func sendChatOnline(message: String, history: [[String: String]]) async throws -> String {
+        let url = URL(string: "\(baseURL)/api/chat")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body = ["message": message, "history": history] as [String: Any]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.chatFailed
+        }
+
+        let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return result?["response"] as? String ?? "No response"
+    }
+
+    // MARK: - Offline Chat (Local AI)
+    private func sendChatOffline(message: String, history: [[String: String]]) async throws -> String {
+        let llmService = LocalLLMService.shared
+
+        guard llmService.isModelLoaded else {
+            throw LLMError.modelNotLoaded
+        }
+
+        return try await llmService.generateChatResponse(message: message, history: history)
     }
 
     // MARK: - Auth
@@ -101,26 +173,6 @@ class APIService: ObservableObject {
         return try JSONDecoder().decode([KnowledgeEntry].self, from: data)
     }
 
-    // MARK: - Chat
-    func sendChatMessage(_ message: String, history: [[String: String]]) async throws -> String {
-        let url = URL(string: "\(baseURL)/api/chat")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let body = ["message": message, "history": history] as [String: Any]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.chatFailed
-        }
-
-        let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return result?["response"] as? String ?? "No response"
-    }
-
     // MARK: - Health Check
     func checkServerHealth() async throws -> Bool {
         let url = URL(string: "\(baseURL)/")!
@@ -129,6 +181,16 @@ class APIService: ObservableObject {
             return false
         }
         return httpResponse.statusCode == 200
+    }
+
+    // MARK: - Get Status
+    func getStatus() -> [String: Any] {
+        return [
+            "isOnline": isOnline,
+            "offlineModeEnabled": offlineModeEnabled,
+            "serverURL": baseURL,
+            "localModel": LocalLLMService.shared.getModelInfo()
+        ]
     }
 }
 

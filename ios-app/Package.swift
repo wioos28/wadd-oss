@@ -15,13 +15,15 @@ let package = Package(
     ],
     dependencies: [
         // Add dependencies here
-        // .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.8.0"),
     ],
     targets: [
         .target(
             name: "WcoreX",
             dependencies: [],
-            path: "KEApp"
+            path: "KEApp",
+            resources: [
+                .copy("Resources")
+            ]
         ),
     ]
 )
