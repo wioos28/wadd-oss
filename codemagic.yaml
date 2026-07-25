@@ -1,6 +1,6 @@
 workflows:
   ke-app-ios:
-    name: KE App iOS
+    name: Build Unsigned IPA Wcore X
     max_build_duration: 60
     instance_type: mac_mini_m1
 
@@ -26,29 +26,26 @@ workflows:
           echo "Resolving Swift Package Manager dependencies..."
           swift package resolve
 
-      - name: Build iOS App
+      - name: Build Archive (No Signing)
         script: |
-          echo "Building iOS App..."
+          echo "Building Xcode Archive without code signing..."
+          mkdir -p $HOME/build
           xcodebuild -scheme KEApp \
             -destination 'generic/platform=iOS' \
             -configuration Release \
-            -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
+            -archivePath $HOME/build/KEApp.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             archive
 
-      - name: Export IPA
+      - name: Package Unsigned IPA
         script: |
-          xcodebuild -exportArchive \
-            -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath $CM_BUILD_DIR/build/ios
+          echo "Creating Payload folder and zipping into IPA..."
+          cd $HOME/build
+          mkdir -p Payload
+          cp -r KEApp.xcarchive/Products/Applications/KEApp.app Payload/
+          zip -r KEApp.ipa Payload
 
     artifacts:
-      - build/ios/*.ipa
-      - build/ios/**/*.xcarchive
-
-    cache:
-      cache_paths:
-        - .build
+      - $HOME/build/KEApp.ipa
