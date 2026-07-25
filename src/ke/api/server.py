@@ -11,8 +11,9 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ke.config import load_config, ensure_data_dirs, KeConfig
-from ke.api.routers import auth, knowledge, chat, status_router
+from ke.api.routers import auth, knowledge, chat, status_router, api_keys
 from ke.api.middleware.auth import get_current_user
+from ke.auth.middleware import RateLimitMiddleware, APIKeyMiddleware
 
 
 # ============================================================================
@@ -53,8 +54,22 @@ def create_app(config: KeConfig | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Rate limiting middleware (60 requests per minute)
+    app.add_middleware(
+        RateLimitMiddleware,
+        max_requests=60,
+        window_seconds=60,
+    )
+
+    # API Key authentication middleware
+    app.add_middleware(
+        APIKeyMiddleware,
+        protected_paths=["/api/knowledge", "/api/chat"],
+    )
+
     # Include routers
     app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+    app.include_router(api_keys.router, prefix="/api/keys", tags=["API Keys"])
     app.include_router(knowledge.router, prefix="/api/knowledge", tags=["Knowledge"])
     app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
     app.include_router(status_router.router, prefix="/api", tags=["Status"])
