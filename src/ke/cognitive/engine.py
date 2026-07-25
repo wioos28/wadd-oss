@@ -17,6 +17,7 @@ from ke.domain.models import (
 from ke.cognitive.memory_integration import MemoryIntegrator
 from ke.cognitive.rag_pipeline import RAGPipeline
 from ke.cognitive.intent_detector import IntentDetector, Intent
+from ke.llm.manager import LLMManager
 
 
 class CognitiveEngine:
@@ -28,7 +29,7 @@ class CognitiveEngine:
     2. Memory Integration - Load relevant memories
     3. RAG Retrieval - Find relevant knowledge
     4. Reasoning - Process and synthesize
-    5. Response Generation - Generate response
+    5. Response Generation - Generate response via LLM
     """
 
     def __init__(self, config: KeConfig):
@@ -36,21 +37,14 @@ class CognitiveEngine:
         self.memory_integrator = MemoryIntegrator(config)
         self.rag_pipeline = RAGPipeline(config)
         self.intent_detector = IntentDetector()
-        self._llm_client = None
-
-    @property
-    def llm_client(self):
-        """Lazy-load LLM client."""
-        if self._llm_client is None:
-            from ke.llm.client import LLMClient
-            self._llm_client = LLMClient()
-        return self._llm_client
+        self.llm_manager = LLMManager()
 
     async def process(
         self,
         message: str,
         conversation_history: list[dict[str, str]] | None = None,
         session_id: str | None = None,
+        provider: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Process a user message through the cognitive pipeline.
@@ -91,9 +85,30 @@ class CognitiveEngine:
             conversation_history=conversation_history or [],
         )
 
-        # Step 5: Generate Response (streaming)
-        async for token in self._generate_response(context):
-            yield {"type": "token", "data": token}
+        # Step 5: Generate Response (streaming via LLM Manager)
+        self._response_buffer = []
+        try:
+            messages = [
+                {"role": "system", "content": "You are Knowledge Engine AI, a helpful assistant powered by a knowledge base."},
+                {"role": "user", "content": context},
+            ]
+
+            async for token in self.llm_manager.stream_chat(
+                messages=messages,
+                provider=provider,
+                temperature=0.7,
+                max_tokens=2048,
+            ):
+                self._response_buffer.append(token)
+                yield {"type": "token", "data": token}
+
+        except Exception as e:
+            # Fallback to template-based response
+            fallback = self._generate_fallback_response(context)
+            for word in fallback.split():
+                token = word + " "
+                self._response_buffer.append(token)
+                yield {"type": "token", "data": token}
 
         # Step 6: Store in Memory
         await self.memory_integrator.store_interaction(
@@ -106,6 +121,7 @@ class CognitiveEngine:
             "session_id": session_id,
             "intent": intent.type.value,
             "sources_count": len(sources),
+            "provider": provider or "auto",
         }}
 
     def _build_context(
@@ -119,13 +135,8 @@ class CognitiveEngine:
         """Build the context for LLM generation."""
         parts = []
 
-        # System prompt
-        parts.append("""You are Knowledge Engine AI, a helpful assistant powered by a knowledge base.
-Answer questions accurately based on the provided context and memories.
-Be concise, clear, and helpful. If you don't know, say so.""")
-
         # Intent context
-        parts.append(f"\n[Intent: {intent.type.value}]")
+        parts.append(f"[Intent: {intent.type.value}]")
         if intent.entities:
             parts.append(f"[Entities: {', '.join(intent.entities)}]")
 
@@ -161,58 +172,12 @@ Be concise, clear, and helpful. If you don't know, say so.""")
 
         return "\n".join(parts)
 
-    async def _generate_response(self, context: str) -> AsyncGenerator[str, None]:
-        """Generate response using LLM."""
-        self._response_buffer = []
-
-        try:
-            if self.llm_client.is_available():
-                # Use LLM
-                response = await self._run_in_executor(
-                    self.llm_client.complete_with_system,
-                    "You are a helpful AI assistant.",
-                    context,
-                )
-
-                # Stream tokens
-                for word in response.split():
-                    token = word + " "
-                    self._response_buffer.append(token)
-                    yield token
-            else:
-                # Fallback: Generate based on context
-                response = self._generate_fallback_response(context)
-                for word in response.split():
-                    token = word + " "
-                    self._response_buffer.append(token)
-                    yield token
-
-        except Exception as e:
-            error_msg = f"I encountered an error processing your request: {str(e)}"
-            self._response_buffer.append(error_msg)
-            yield error_msg
-
     def _generate_fallback_response(self, context: str) -> str:
         """Generate a fallback response when LLM is not available."""
-        # Extract relevant information from context
         lines = context.split("\n")
-        relevant_lines = []
-        capture = False
-
-        for line in lines:
-            if "[User Question]" in line:
-                capture = True
-                continue
-            if capture and line.strip():
-                relevant_lines.append(line)
-
-        question = " ".join(relevant_lines) if relevant_lines else "your question"
-
-        # Build response from knowledge sources
-        response = f"Based on the knowledge base, here's what I found about your question:\n\n"
-
-        in_sources = False
         source_content = []
+        in_sources = False
+
         for line in lines:
             if "[Knowledge Base]" in line:
                 in_sources = True
@@ -222,19 +187,14 @@ Be concise, clear, and helpful. If you don't know, say so.""")
             if "[User Question]" in line:
                 break
 
+        response = "Based on the knowledge base, here's what I found:\n\n"
         if source_content:
             for line in source_content[:10]:
                 response += f"{line}\n"
         else:
-            response += "I don't have specific information about this in my knowledge base. Could you provide more details or try a different query?"
+            response += "I don't have specific information about this. Could you provide more details?"
 
         return response
-
-    async def _run_in_executor(self, func, *args):
-        """Run a synchronous function in an executor."""
-        import asyncio
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, func, *args)
 
     def _source_to_dict(self, source: QueryResult) -> dict:
         """Convert QueryResult to dictionary."""
