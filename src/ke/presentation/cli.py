@@ -485,6 +485,42 @@ def account_list(
 
 
 # ============================================================================
+# Server Commands
+# ============================================================================
+
+@app.command()
+def serve(
+    host: str = typer.Option("0.0.0.0", help="Server host"),
+    port: int = typer.Option(8000, help="Server port"),
+    reload: bool = typer.Option(False, help="Enable auto-reload"),
+) -> None:
+    """Start the API server with streaming support."""
+    import uvicorn
+
+    console.print(Panel.fit(
+        f"[bold green]Starting Knowledge Engine API Server[/]\n\n"
+        f"Host: {host}\n"
+        f"Port: {port}\n"
+        f"Reload: {reload}\n\n"
+        f"[bold]Endpoints:[/]\n"
+        f"  API Docs: http://{host}:{port}/docs\n"
+        f"  Health: http://{host}:{port}/api/health\n"
+        f"  Chat: http://{host}:{port}/api/chat/stream\n\n"
+        f"[bold]Streaming:[/]\n"
+        f"  POST /api/chat/stream (SSE)",
+        title="Server Starting",
+    ))
+
+    uvicorn.run(
+        "ke.api.server:create_app",
+        host=host,
+        port=port,
+        reload=reload,
+        factory=True,
+    )
+
+
+# ============================================================================
 # Main Entry Point
 # ============================================================================
 
