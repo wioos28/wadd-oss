@@ -20,7 +20,8 @@ let package = Package(
     targets: [
         .target(
             name: "KEApp",
-            dependencies: []
+            dependencies: [],
+            path: "KEApp"
         ),
     ]
 )
