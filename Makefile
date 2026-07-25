@@ -102,6 +102,27 @@ test: ## Run all tests
 	python -m pytest tests/ -v
 
 # ============================================================
+# iOS Build Commands
+# ============================================================
+
+# Build unsigned IPA (requires macOS with Xcode)
+build-ipa: ## Build unsigned IPA for iOS (macOS only)
+	@echo "Building unsigned IPA for KEApp..."
+	@cd ios-app && swift package resolve
+	@mkdir -p build/ios
+	@cd ios-app && xcodebuild -scheme KEApp \
+		-destination 'generic/platform=iOS' \
+		-configuration Release \
+		-archivePath $(CURDIR)/build/ios/KEApp.xcarchive \
+		CODE_SIGNING_ALLOWED=NO \
+		CODE_SIGNING_REQUIRED=NO \
+		CODE_SIGN_IDENTITY="" \
+		archive
+	@cd build/ios && mkdir -p Payload && cp -r KEApp.xcarchive/Products/Applications/KEApp.app Payload/
+	@cd build/ios && zip -r KEApp.ipa Payload
+	@echo "IPA built successfully: build/ios/KEApp.ipa"
+
+# ============================================================
 # Deployment Commands
 # ============================================================
 
