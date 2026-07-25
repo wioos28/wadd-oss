@@ -65,6 +65,7 @@ class LocalLLMService: ObservableObject {
     }
 
     // MARK: - Initialize Inference Engine
+    @MainActor
     private func initializeEngine(path: String) {
         do {
             inferenceEngine = try LlamaInference(modelPath: path)
