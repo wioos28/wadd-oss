@@ -5,7 +5,6 @@ workflows:
     environment:
       groups:
         - apple_credentials
-      flutter: stable
       xcode: latest
       cocoapods: default
     triggering:
@@ -20,11 +19,11 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          cd ios
+          cd ios-app
           pod install --repo-update
       - name: Build iOS
         script: |
-          xcodebuild -workspace KEApp.xcworkspace \
+          xcodebuild -workspace ios-app/KEApp.xcworkspace \
             -scheme KEApp \
             -sdk iphoneos \
             -configuration Release \
@@ -34,7 +33,7 @@ workflows:
         script: |
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
+            -exportOptionsPlist ci-cd/ios/ExportOptions.plist \
             -exportPath $CM_BUILD_DIR/build/ios
     artifacts:
       - build/ios/*.ipa
@@ -58,7 +57,7 @@ workflows:
     cache:
       cache_paths:
         - ~/Library/Caches/CocoaPods
-        - ios/Pods
+        - ios-app/Pods
 
   ke-app-ios-testflight:
     name: KE App iOS - TestFlight
@@ -66,7 +65,6 @@ workflows:
     environment:
       groups:
         - apple_credentials
-      flutter: stable
       xcode: latest
       cocoapods: default
     triggering:
@@ -78,11 +76,11 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          cd ios
+          cd ios-app
           pod install --repo-update
       - name: Build iOS
         script: |
-          xcodebuild -workspace KEApp.xcworkspace \
+          xcodebuild -workspace ios-app/KEApp.xcworkspace \
             -scheme KEApp \
             -sdk iphoneos \
             -configuration Release \
@@ -92,7 +90,7 @@ workflows:
         script: |
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
+            -exportOptionsPlist ci-cd/ios/ExportOptions.plist \
             -exportPath $CM_BUILD_DIR/build/ios
     artifacts:
       - build/ios/*.ipa
@@ -109,4 +107,4 @@ workflows:
     cache:
       cache_paths:
         - ~/Library/Caches/CocoaPods
-        - ios/Pods
+        - ios-app/Pods
