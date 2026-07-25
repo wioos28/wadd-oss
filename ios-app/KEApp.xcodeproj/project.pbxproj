@@ -65,7 +65,7 @@
 				A200000C /* Assets.xcassets */,
 				A200000B /* Info.plist */,
 			);
-			path = KEApp;
+			path = ../KEApp;
 			sourceTree = "<group>";
 		};
 		A5000003 /* Models */ = {

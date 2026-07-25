@@ -31,7 +31,7 @@ struct LoginView: View {
                         TextField("Email", text: $email)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .textContentType(.emailAddress)
-                            .autocapitalization(.none)
+                            .textInputAutocapitalization(.never)
                     }
                     
                     TextField("Username", text: $username)
