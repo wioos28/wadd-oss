@@ -17,6 +17,7 @@
 		A1000008 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008 /* LoginView.swift */; };
 		A1000009 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* AuthManager.swift */; };
 		A100000A /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000A /* APIService.swift */; };
+		A100000B /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000D /* LocalLLMService.swift */; };
 		A100000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A200000C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +34,7 @@
 		A200000A /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		A200000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A200000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A200000D /* LocalLLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
 		A3000001 /* KEApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KEApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -102,6 +104,7 @@
 			children = (
 				A2000009 /* AuthManager.swift */,
 				A200000A /* APIService.swift */,
+				A200000D /* LocalLLMService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -185,6 +188,7 @@
 				A1000008 /* LoginView.swift in Sources */,
 				A1000009 /* AuthManager.swift in Sources */,
 				A100000A /* APIService.swift in Sources */,
+				A100000B /* LocalLLMService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

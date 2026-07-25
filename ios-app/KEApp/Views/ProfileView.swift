@@ -143,7 +143,7 @@ class ProfileViewModel: ObservableObject {
     
     func loadStats() async {
         do {
-            let entries = try await apiService.getKnowledgeEntries(limit: 1)
+            _ = try await apiService.getKnowledgeEntries(limit: 1)
             stats = ProfileStats(
                 totalEntries: 1023,
                 totalVectors: 1021,
