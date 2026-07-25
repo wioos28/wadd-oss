@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # ============================================================
+  # 1. Redis - Rate Limiting & Caching
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: wcore-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================================
+  # 2. Ollama - Local LLM Engine
+  # ============================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: wcore-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    # GPU support (uncomment for Nvidia GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ============================================================
+  # 3. Wcore X API - Backend (FastAPI + Cognitive Engine)
+  # ============================================================
+  wcore-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: wcore-api
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - RATE_LIMIT_MAX_REQUESTS=60
+      - RATE_LIMIT_WINDOW_SECONDS=60
+      - ENVIRONMENT=production
+    volumes:
+      - wcore_data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================================
+  # 4. Wcore X Web - Frontend (Next.js)
+  # ============================================================
+  wcore-web:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile.web
+    container_name: wcore-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      wcore-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+# ============================================================
+# Volumes - Persistent Data
+# ============================================================
+volumes:
+  redis_data:
+    driver: local
+  ollama_data:
+    driver: local
+  wcore_data:
+    driver: local
