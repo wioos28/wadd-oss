@@ -2,9 +2,14 @@ workflows:
   ke-app-ios:
     name: KE App iOS
     max_build_duration: 60
+    instance_type: mac_mini_m1
+
+    # Set working directory to ios-app
+    working_directory: ios-app
+
     environment:
       xcode: latest
-      cocoapods: default
+
     triggering:
       events:
         - push
@@ -14,33 +19,36 @@ workflows:
         - pattern: 'develop'
           include: true
       cancel_previous_builds: true
+
     scripts:
-      - name: Install dependencies
+      - name: Install dependencies (SPM)
         script: |
-          cd ios-app
-          pod install --repo-update
-      - name: Build iOS (No Code Sign)
+          echo "Resolving Swift Package Manager dependencies..."
+          swift package resolve
+
+      - name: Build iOS App
         script: |
-          xcodebuild -workspace ios-app/KEApp.xcworkspace \
-            -scheme KEApp \
-            -sdk iphoneos \
+          echo "Building iOS App..."
+          xcodebuild -scheme KEApp \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             archive
-      - name: Export IPA (No Sign)
+
+      - name: Export IPA
         script: |
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            -exportOptionsPlist ios-app/ExportOptions.plist \
-            -exportPath $CM_BUILD_DIR/build/ios \
-            -exportArchiveOptionsPlist ios-app/ExportOptions.plist
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath $CM_BUILD_DIR/build/ios
+
     artifacts:
       - build/ios/*.ipa
       - build/ios/**/*.xcarchive
+
     cache:
       cache_paths:
-        - ~/Library/Caches/CocoaPods
-        - ios-app/Pods
+        - .build
