@@ -8,5 +8,9 @@
     <false/>
     <key>thinning</key>
     <string>&lt;none&gt;</string>
+    <key>teamID</key>
+    <string></string>
+    <key>signingStyle</key>
+    <string>automatic</string>
 </dict>
 </plist>

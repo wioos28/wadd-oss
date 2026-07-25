@@ -42,6 +42,12 @@ if [ ! -d "${IOS_DIR}" ]; then
     exit 1
 fi
 
+# Check if xcodeproj exists
+if [ ! -d "${IOS_DIR}/${APP_NAME}.xcodeproj" ]; then
+    echo -e "${RED}Error: ${APP_NAME}.xcodeproj not found${NC}"
+    exit 1
+fi
+
 # Clean previous builds
 echo -e "${YELLOW}[1/5] Cleaning previous builds...${NC}"
 rm -rf "${BUILD_DIR}"
@@ -56,7 +62,8 @@ cd ..
 # Build archive
 echo -e "${YELLOW}[3/5] Building Xcode archive...${NC}"
 cd "${IOS_DIR}"
-xcodebuild -scheme "${SCHEME}" \
+xcodebuild -project "${APP_NAME}.xcodeproj" \
+    -scheme "${SCHEME}" \
     -destination 'generic/platform=iOS' \
     -configuration Release \
     -archivePath "$(pwd)/../${ARCHIVE_PATH}" \

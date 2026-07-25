@@ -110,7 +110,8 @@ build-ipa: ## Build unsigned IPA for iOS (macOS only)
 	@echo "Building unsigned IPA for KEApp..."
 	@cd ios-app && swift package resolve
 	@mkdir -p build/ios
-	@cd ios-app && xcodebuild -scheme KEApp \
+	@cd ios-app && xcodebuild -project KEApp.xcodeproj \
+		-scheme KEApp \
 		-destination 'generic/platform=iOS' \
 		-configuration Release \
 		-archivePath $(CURDIR)/build/ios/KEApp.xcarchive \

@@ -30,7 +30,8 @@ workflows:
         script: |
           echo "Building Xcode Archive without code signing..."
           mkdir -p $HOME/build
-          xcodebuild -scheme KEApp \
+          xcodebuild -project KEApp.xcodeproj \
+            -scheme KEApp \
             -destination 'generic/platform=iOS' \
             -configuration Release \
             -archivePath $HOME/build/KEApp.xcarchive \
