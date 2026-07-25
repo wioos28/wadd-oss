@@ -33,7 +33,7 @@ workflows:
         script: |
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            -exportOptionsPlist ci-cd/ios/ExportOptions.plist \
+            -exportOptionsPlist ios-app/ExportOptions.plist \
             -exportPath $CM_BUILD_DIR/build/ios
     artifacts:
       - build/ios/*.ipa
@@ -90,7 +90,7 @@ workflows:
         script: |
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/build/KEApp.xcarchive \
-            -exportOptionsPlist ci-cd/ios/ExportOptions.plist \
+            -exportOptionsPlist ios-app/ExportOptions.plist \
             -exportPath $CM_BUILD_DIR/build/ios
     artifacts:
       - build/ios/*.ipa
